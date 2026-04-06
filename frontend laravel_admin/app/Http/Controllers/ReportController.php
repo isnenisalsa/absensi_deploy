@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Session;
 
 class ReportController extends Controller
 {
-    public function historyAttendance()
+    public function historyAttendance(Request $request)
     {
         // Pastikan user sudah login
         if (!Session::has('api_token')) {
@@ -15,33 +15,48 @@ class ReportController extends Controller
         }
 
         $token = Session::get('api_token');
+        $query = http_build_query($request->all());
         
         try {
-            // Fetch dari API Node.js (Endpoint GET /history untuk riwayat user login)
-            $response = \Illuminate\Support\Facades\Http::withToken($token)->get('http://localhost:3000/api/attendance/history');
+            $response = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/attendance/history?$query");
+            $attendances = $response->successful() ? $response->json() : [];
+            
+            // Master data untuk dropdown
+            $resDeps = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/departments");
+            $deps = $resDeps->successful() ? $resDeps->json() : [];
 
-            if ($response->successful()) {
-                $attendances = $response->json();
-            } else {
-                $attendances = []; // Fallback jika server terputus
-            }
+            $resDivs = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/divisions");
+            $divs = $resDivs->successful() ? $resDivs->json() : [];
+
+            $resMitras = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/mitra-kerja");
+            $mitras = $resMitras->successful() ? $resMitras->json() : [];
+
+            $resDists = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/districts");
+            $districts = $resDists->successful() ? $resDists->json() : [];
+
         } catch (\Exception $e) {
-            $attendances = []; // Tangkap dan selimuti error jaringan server
+            $attendances = [];
+            $deps = []; $divs = []; $mitras = []; $districts = [];
         }
         
-        return view('report.history', compact('attendances'));
+        // Default tanggal: awal bulan ini s/d hari ini
+        $startDate = $request->query('start_date', date('Y-m-01'));
+        $endDate = $request->query('end_date', date('Y-m-d'));
+
+        return view('report.history', compact('attendances', 'deps', 'divs', 'mitras', 'districts', 'startDate', 'endDate'));
     }
 
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
         if (!Session::has('api_token')) {
             return redirect('/login');
         }
 
         $token = Session::get('api_token');
+        $query = http_build_query($request->all());
         try {
-            // Ambil data terbaru dari Node.js untuk di export
-            $response = \Illuminate\Support\Facades\Http::withToken($token)->get('http://localhost:3000/api/attendance/history');
+            // Ambil data terbaru dari Node.js untuk di export dengan filter
+            $response = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/attendance/history?$query");
             $attendances = $response->successful() ? $response->json() : [];
         } catch (\Exception $e) {
             $attendances = [];
@@ -174,5 +189,69 @@ class ReportController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Koneksi ke backend terputus. API Node.js mati?']);
         }
+    }
+
+    // --- FTW REPORT ---
+    public function ftw(Request $request)
+    {
+        if (!Session::has('api_token')) return redirect('/login');
+
+        // Tarik data memakai HTTP API ke Node.js agar nyambung ke MySQL
+        $token = Session::get('api_token');
+        
+        // Default ke hari ini jika tidak ada filter
+        $filterDate = $request->query('filter_date', date('Y-m-d'));
+        
+        try {
+            $response = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/attendance/ftw", [
+                'filter_date' => $filterDate
+            ]);
+            $rawReports = $response->successful() ? $response->json() : [];
+        } catch (\Exception $e) {
+            $rawReports = [];
+            return redirect()->back()->withErrors(['error' => 'Koneksi ke backend FTW terputus. API Node.js mati?']);
+        }
+
+        // Terapkan evaluasi FTW Otomatis ke array dari response
+        $totalFit = 0;
+        $totalUnfit = 0;
+
+        $reports = array_map(function($ftw) use (&$totalFit, &$totalUnfit) {
+            
+            $isGejala = filter_var($ftw['gejala_kesehatan'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $isObat = filter_var($ftw['konsumsi_obat'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $isMasalah = filter_var($ftw['punya_masalah'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            $jam_tidur = strtoupper($ftw['jam_tidur_12_jam'] ?? '');
+            $isFatigue = in_array($jam_tidur, ['KR 1 JAM', '2 JAM', '4 JAM']);
+            
+            $isUnfit = $isGejala || $isObat || $isMasalah || $isFatigue;
+            $status = $isUnfit ? 'UNFIT' : 'FIT';
+            
+            if ($isUnfit) $totalUnfit++; else $totalFit++;
+
+            $reasons = [];
+            if ($isGejala) $reasons[] = 'Gejala/Sakit';
+            if ($isObat) $reasons[] = 'Obat Kantuk';
+            if ($isMasalah) $reasons[] = 'Masalah Personal';
+            if ($isFatigue) $reasons[] = 'Kurang Tidur';
+            
+            // Return only needed fields
+            return (object) [
+                'nrp' => $ftw['nrp'],
+                'full_name' => $ftw['employee']['full_name'] ?? '-',
+                'ftw_date' => $ftw['ftw_date'] ?? '-',
+                'jam_tidur_12_jam' => $ftw['jam_tidur_12_jam'] ?? '-',
+                'jam_bangun' => $ftw['jam_bangun'] ?? '-',
+                'gejala_kesehatan' => $isGejala,
+                'konsumsi_obat' => $isObat,
+                'unit_dioperasikan' => $ftw['unit_dioperasikan'] ?? '-',
+                'calculated_status' => $status,
+                'unfit_reasons' => !empty($reasons) ? implode(', ', $reasons) : '-',
+                'created_at' => $ftw['created_at'] ?? '-',
+            ];
+        }, $rawReports);
+
+        return view('report.ftw', compact('reports', 'totalFit', 'totalUnfit', 'filterDate'));
     }
 }

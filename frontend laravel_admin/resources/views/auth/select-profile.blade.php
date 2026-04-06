@@ -6,7 +6,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Presensi Subcontractor - Select Profile</title>
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    @vite(['resources/css/app.css'])
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -38,13 +38,13 @@
     <header
         class="bg-white/80 backdrop-blur-md border-b border-gray-100 py-4 px-8 flex justify-between items-center z-10 w-full">
         <div class="flex items-center gap-3">
-            <i class="w-6 h-6 text-gray-500" data-lucide="building-2"></i>
+            <i  class="fa-solid fa-building w-6 h-6 text-gray-500" ></i>
             <span class="font-extrabold text-[#2c3e50] tracking-wide uppercase text-sm">PAMA SUBCONTRACTOR PORTAL</span>
         </div>
         <div class="flex items-center gap-6 text-gray-400">
-            <button class="hover:text-gray-700 transition-colors"><i class="w-5 h-5"
-                    data-lucide="help-circle"></i></button>
-            <button class="hover:text-gray-700 transition-colors"><i class="w-5 h-5" data-lucide="bell"></i></button>
+            <button class="hover:text-gray-700 transition-colors"><i  class="fa-solid fa-circle-question w-5 h-5"
+                    ></i></button>
+            <button class="hover:text-gray-700 transition-colors"><i  class="fa-solid fa-bell w-5 h-5" ></i></button>
         </div>
     </header>
 
@@ -55,7 +55,7 @@
 
             <!-- Logo area -->
             <div class="mb-4">
-                <i class="w-12 h-12 text-blue-600" data-lucide="building-2"></i>
+                <i  class="fa-solid fa-building w-12 h-12 text-blue-600" ></i>
             </div>
 
             <h1 class="text-[#2c3e50] text-3xl font-extrabold tracking-tight uppercase mb-2">PRESENSI SUBCONTRACTOR</h1>
@@ -70,7 +70,7 @@
                         <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">USERNAME / PNRP</label>
                         <div class="relative flex items-center">
                             <span class="absolute left-4 text-gray-400">
-                                <i class="w-4 h-4" data-lucide="user"></i>
+                                <i  class="fa-solid fa-user w-4 h-4" ></i>
                             </span>
                             <input readonly type="text" value="{{ session('user.nrp') ?? '80123456' }}"
                                 class="w-full bg-[#f8f9fb] border border-gray-100 rounded-lg py-3.5 pl-11 pr-4 text-sm text-[#2c3e50] font-bold focus:ring-0 cursor-default outline-none" />
@@ -82,7 +82,7 @@
                         <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">PROFILE</label>
                         <div class="relative flex items-center">
                             <span class="absolute left-4 text-gray-400">
-                                <i class="w-4 h-4" data-lucide="briefcase"></i>
+                                <i  class="fa-solid fa-briefcase w-4 h-4" ></i>
                             </span>
                             <select name="profile" required
                                 class="w-full bg-white border border-gray-200 rounded-lg py-3.5 pl-11 pr-10 text-sm text-black invalid:text-gray-400 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none cursor-pointer transition-colors">
@@ -101,7 +101,7 @@
                         <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">SITE</label>
                         <div class="relative flex items-center">
                             <span class="absolute left-4 text-gray-400">
-                                <i class="w-4 h-4" data-lucide="map-pin"></i>
+                                <i  class="fa-solid fa-map-pin w-4 h-4" ></i>
                             </span>
                             <select name="site" required
                                 class="w-full bg-white border border-gray-200 rounded-lg py-3.5 pl-11 pr-10 text-sm text-black invalid:text-gray-400 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none cursor-pointer transition-colors">
@@ -122,7 +122,7 @@
                     <button type="submit"
                         class="bg-[#007bff] hover:bg-[#0069d9] text-white font-bold py-3.5 px-10 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-200 w-full sm:w-auto min-w-[200px]">
                         <span class="uppercase tracking-wider text-sm">Select Profile</span>
-                        <i class="w-4 h-4" data-lucide="arrow-right"></i>
+                        <i  class="fa-solid fa-arrow-right w-4 h-4" ></i>
                     </button>
                     <a href="{{ route('logout') }}"
                         onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
@@ -142,7 +142,7 @@
             <!-- Security Status -->
             <div class="info-card bg-white p-6 flex items-center gap-4">
                 <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                    <i class="w-5 h-5" data-lucide="shield-check"></i>
+                    <i  class="fa-solid fa-shield w-5 h-5" ></i>
                 </div>
                 <div>
                     <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">SECURITY STATUS
@@ -155,7 +155,7 @@
             <div class="info-card bg-white p-6 flex items-center gap-4">
                 <div
                     class="w-10 h-10 rounded-full bg-blue-100/50 text-gray-600 flex items-center justify-center shrink-0">
-                    <i class="w-5 h-5" data-lucide="clock"></i>
+                    <i  class="fa-solid fa-clock w-5 h-5" ></i>
                 </div>
                 <div>
                     <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">LAST ACCESS</div>
@@ -167,7 +167,7 @@
             <div class="info-card bg-white p-6 flex items-center gap-4">
                 <div
                     class="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
-                    <i class="w-5 h-5" data-lucide="headphones"></i>
+                    <i  class="fa-solid fa-headset w-5 h-5" ></i>
                 </div>
                 <div>
                     <div class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">SYSTEM SUPPORT</div>

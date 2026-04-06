@@ -44,8 +44,9 @@ export const checkIn = async (req: Request, res: Response): Promise<void> => {
       data: {
         nrp,
         attendance_date: now,
-        time_wita: now, // asumsi local time server adalah wita sesuai req
-        time_wib: new Date(now.getTime() - 60 * 60 * 1000), // WIB is WITA - 1 hr
+        date_in: now,
+        time_wita: now, 
+        time_wib: new Date(now.getTime() - 60 * 60 * 1000), 
         shift_id,
         trans_type: 'Check_in',
         cp_location,
@@ -75,35 +76,52 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
   
       // Opsional: Validasi kalau hari ini belum checkout dsb.
       // Dibuat route Create Transaksi ke-dua bernama Check-Out
-      const now = new Date();
-      // Untuk sederhananya kita asumsikan shift mengikuti jadwal checkin sebelumnya 
-      // Atau aplikasi frontend yg kirim ulang id shift terhubung
+    const now = new Date();
+    // Look back 24 hours to find the latest Check-in that HAS NOT been checked out yet.
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-      // Dummy pencarian shift hari ini
-      const todayString = now.toISOString().split('T')[0];
-      const todayCheckIn = await prisma.attendances.findFirst({
+    const latestCheckIn = await prisma.attendances.findFirst({
+      where: {
+          nrp,
+          trans_type: 'Check_in',
+          time_wita: {
+              gte: twentyFourHoursAgo
+          }
+      },
+      orderBy: { time_wita: 'desc' }
+    });
+
+    if(!latestCheckIn) {
+        res.status(404).json({ error: 'Anda belum Check-in dalam 24 jam terakhir!' });
+        return;
+    }
+
+    // Optional: Check if already checked out for this specific Check-in
+    const alreadyCheckedOut = await prisma.attendances.findFirst({
         where: {
             nrp,
-            trans_type: 'Check_in',
-            attendance_date: {
-                gte: new Date(`${todayString}T00:00:00.000Z`)
+            trans_type: 'Check_out',
+            // Check-out must be after the check-in time
+            time_wita: {
+                gt: latestCheckIn.time_wita
             }
-        },
-        orderBy: { attendance_date: 'desc' }
-      });
+        }
+    });
 
-      if(!todayCheckIn) {
-          res.status(404).json({ error: 'Anda belum Check-in hari ini!' });
-          return;
-      }
+    if (alreadyCheckedOut) {
+        res.status(400).json({ error: 'Anda sudah melakukan Check-out untuk shift terakhir.' });
+        return;
+    }
 
       const attendance = await prisma.attendances.create({
         data: {
           nrp,
-          attendance_date: now,
+          attendance_date: latestCheckIn.attendance_date,
+          date_in: latestCheckIn.date_in,
+          date_out: now,
           time_wita: now,
           time_wib: new Date(now.getTime() - 60 * 60 * 1000),
-          shift_id: todayCheckIn.shift_id,
+          shift_id: latestCheckIn.shift_id,
           trans_type: 'Check_out',
           att_latitude: lat,
           att_longitude: long,
@@ -126,14 +144,90 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
   export const getMyAttendance = async (req: Request, res: Response): Promise<void> => {
     try {
         const nrp = req.user!.nrp;
+        const role = req.user!.role; // Assuming token includes role
+        
+        let whereClause: any = {};
+        
+        if (role !== 'admin') {
+            whereClause.nrp = nrp;
+        } else {
+            // Admin Filter Logic
+            const { start_date, end_date, divisi, dept, perusahaan, distrik } = req.query;
+
+            if (start_date || end_date) {
+                whereClause.attendance_date = {};
+                if (start_date) whereClause.attendance_date.gte = new Date(`${start_date}T00:00:00.000Z`);
+                if (end_date) whereClause.attendance_date.lte = new Date(`${end_date}T23:59:59.999Z`);
+            }
+
+            if (divisi && divisi !== 'ALL') {
+                whereClause.employee = { ...whereClause.employee, div_id: Number(divisi) };
+            }
+            if (dept && dept !== 'ALL') {
+                whereClause.employee = { 
+                    ...whereClause.employee, 
+                    division: { dept_id: Number(dept) } 
+                };
+            }
+            if (perusahaan && perusahaan !== 'ALL') {
+                whereClause.employee = { ...whereClause.employee, mitra_kerja_id: Number(perusahaan) };
+            }
+            if (distrik && distrik !== 'ALL') {
+                whereClause.employee = { ...whereClause.employee, dist_id: Number(distrik) };
+            }
+        }
+
         const records = await prisma.attendances.findMany({
-            where: { nrp },
+            where: whereClause,
             orderBy: { attendance_date: 'desc' },
-            include: { shift: true }
+            include: { 
+                shift: true,
+                employee: {
+                    include: {
+                        mitra_kerja: true,
+                        position: true,
+                        division: {
+                            include: { department: true }
+                        },
+                        district: true
+                    }
+                }
+            }
         });
 
         res.status(200).json(records);
     } catch(err) {
-        res.status(500).json({ error: 'Gagal mengambil data.' });
+        res.status(500).json({ error: 'Gagal mengambil data.', details: String(err) });
+    }
+  }
+
+  // Mengambil Data Fit To Work (FTW) untuk Admin
+  export const getAllFtw = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { filter_date } = req.query;
+
+        let whereClause: any = {};
+        
+        if (filter_date) {
+            // Kita cari dari jam 00:00 s.d 23:59 pada tanggal yang dipilih
+            const startDate = new Date(`${filter_date}T00:00:00.000Z`);
+            const endDate = new Date(`${filter_date}T23:59:59.999Z`);
+            whereClause.ftw_date = {
+                gte: startDate,
+                lte: endDate
+            };
+        }
+
+        const records = await prisma.ftw_reports.findMany({
+            where: whereClause,
+            orderBy: [{ ftw_date: 'desc' }, { created_at: 'desc' }],
+            include: { 
+                employee: true
+            }
+        });
+
+        res.status(200).json(records);
+    } catch(err) {
+        res.status(500).json({ error: 'Gagal mengambil data.', details: String(err) });
     }
   }

@@ -86,6 +86,37 @@ class AuthController extends Controller
         return view('dashboard');
     }
 
+    public function users()
+    {
+        if (!Session::has('api_token')) {
+            return redirect('/login')->withErrors(['nrp' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $apiUrl = env('NODE_API_URL', 'http://localhost:3000');
+        $token = Session::get('api_token');
+
+        try {
+            $response = Http::withToken($token)->get("{$apiUrl}/api/users");
+            $rawUsers = $response->successful() ? $response->json() : [];
+            
+            // Trim data for performance
+            $users = array_map(function($u) {
+                return [
+                    'nrp' => $u['nrp'],
+                    'role' => $u['role'],
+                    'is_active' => $u['is_active'],
+                    'employee' => [
+                        'full_name' => $u['employee']['full_name'] ?? '-'
+                    ]
+                ];
+            }, $rawUsers);
+        } catch (\Exception $e) {
+            $users = [];
+        }
+
+        return view('auth.users', compact('users'));
+    }
+
     public function logout()
     {
         Session::forget('api_token');

@@ -4,7 +4,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Presensi Subcontractor - Login</title>
 <!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    @vite(['resources/css/app.css'])
 <!-- Google Fonts: Inter -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <!-- Lucide Icons for UI elements -->
@@ -46,15 +46,11 @@
   Ganti atribut 'src' dengan path logo Anda (misal: asset('images/logo.png')).
 -->
 <div class="mb-8 flex justify-center w-full">
-    <!-- Kotak Placeholder -->
-    <div class="h-28 w-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-400 font-semibold text-sm shadow-inner">
-        <i class="w-8 h-8 mb-2 text-gray-400" data-lucide="image"></i>
-        <span>Logo Anda</span>
+    <div class="h-32 w-auto flex flex-col items-center justify-center p-2 rounded-2xl bg-slate-50/50 border border-slate-100 shadow-sm overflow-hidden">
+        <img alt="Company Logo" class="h-24 w-auto object-contain transition-transform duration-500 hover:scale-105" src="{{ asset('assets/images/logo-pama.png') }}" onerror="this.src='https://ui-avatars.com/api/?name=PAMA&background=0052cc&color=fff&size=200&bold=true'" />
     </div>
-    
-    <!-- Tag Image asli yang siap pakai (di-comment sementara) -->
-    <!-- <img alt="Company Logo" class="h-24 w-auto object-contain" src="path/to/your/logo.png" /> -->
 </div>
+
 <!-- Header Section -->
 <div class="text-center mb-10">
 <h1 class="text-[#2c3e50] text-3xl font-extrabold tracking-tight uppercase mb-2">Presensi Subcontractor</h1>
@@ -78,43 +74,43 @@
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
 <!-- Username Field -->
 <div class="flex flex-col">
-<label class="text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Username / PNRP</label>
+<label class="text-[10px] font-extrabold text-slate-500 uppercase mb-2 ml-1 tracking-widest flex items-center gap-2">
+    <i  class="fa-solid fa-user w-3.5 h-3.5 text-blue-600" ></i> NRP (Id Karyawan)
+</label>
 <div class="relative flex items-center">
-<span class="absolute left-4 text-gray-500">
-<i class="w-4 h-4" data-lucide="user"></i>
-</span>
-<input name="nrp" value="{{ old('nrp') }}" required class="input-field-container w-full border border-gray-100 rounded-lg py-4 pl-11 pr-4 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-500" placeholder="Enter your NRP" type="text"/>
+<input name="nrp" value="{{ old('nrp') }}" required class="input-field-container w-full border border-gray-100 rounded-xl py-4 px-5 text-[13px] font-bold text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white outline-none transition-all placeholder:text-gray-400" placeholder="Silahkan isi NRP" type="text"/>
 </div>
 </div>
+
 <!-- Password Field -->
 <div class="flex flex-col">
-<label class="text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Password</label>
+<label class="text-[10px] font-extrabold text-slate-500 uppercase mb-2 ml-1 tracking-widest flex items-center gap-2">
+    <i  class="fa-solid fa-lock w-3.5 h-3.5 text-blue-600" ></i> Kata Sandi
+</label>
 <div class="relative flex items-center">
-<span class="absolute left-4 text-gray-500">
-<i class="w-4 h-4" data-lucide="lock"></i>
-</span>
-<input id="passwordInput" name="password" required class="input-field-container w-full border border-gray-100 rounded-lg py-4 pl-11 pr-11 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-black placeholder:text-gray-500" type="password" placeholder="********"/>
-<button id="togglePassword" class="absolute right-4 text-gray-500 hover:text-gray-700 transition-colors" type="button" aria-label="Toggle password visibility">
-<i id="toggleIcon" class="w-4 h-4" data-lucide="eye"></i>
+<input id="passwordInput" name="password" required class="input-field-container w-full border border-gray-100 rounded-xl py-4 px-5 text-[13px] font-bold text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white outline-none transition-all placeholder:text-gray-400" type="password" placeholder="Silahkan isi password"/>
+<button id="togglePassword" class="absolute right-4 text-slate-400 hover:text-blue-600 transition-colors" type="button" aria-label="Toggle password visibility">
+<i  id="toggleIcon" class="fa-solid fa-eye w-4 h-4" ></i>
 </button>
 </div>
 </div>
+
 <!-- Domain Field (Disabled/Pre-filled style) -->
 <div class="flex flex-col">
-<label class="text-[10px] font-bold text-gray-500 uppercase mb-2 ml-1">Domain</label>
+<label class="text-[10px] font-extrabold text-slate-500 uppercase mb-2 ml-1 tracking-widest flex items-center gap-2">
+    <i  class="fa-solid fa-building w-3.5 h-3.5 text-blue-600" ></i> Domain Portal
+</label>
 <div class="relative flex items-center">
-<span class="absolute left-4 text-gray-500">
-<i class="w-4 h-4" data-lucide="building-2"></i>
-</span>
-<input class="domain-field w-full border-none rounded-lg py-4 pl-11 pr-4 text-sm text-gray-500 font-medium focus:ring-0 cursor-default" readonly="" type="text" value="Pamapersada"/>
+<input class="domain-field w-full border-none rounded-xl py-4 px-5 text-[13px] text-slate-500 font-bold bg-slate-50 focus:ring-0 cursor-default opacity-80" readonly="" type="text" value="Pamapersada"/>
 </div>
 </div>
+
 </div>
 <!-- Login Button -->
 <div class="flex flex-col items-center">
 <button class="bg-[#007bff] hover:bg-[#0069d9] text-white font-bold py-4 px-16 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-200 w-full md:w-auto min-w-[280px]" type="submit">
 <span class="uppercase tracking-wider text-sm">Log In</span>
-<i class="w-4 h-4" data-lucide="arrow-right"></i>
+<i  class="fa-solid fa-arrow-right w-4 h-4" ></i>
 </button>
 <a class="mt-6 text-[#5c6ea3] hover:text-blue-700 text-[10px] font-bold tracking-widest uppercase transition-colors" href="#">
             Forgot Password?
@@ -155,9 +151,9 @@
 
             // Change icon
             if (type === 'text') {
-                toggleIcon.setAttribute('data-lucide', 'eye-off');
+                toggleIcon.className = 'w-4 h-4 fa-solid fa-eye-slash';
             } else {
-                toggleIcon.setAttribute('data-lucide', 'eye');
+                toggleIcon.className = 'w-4 h-4 fa-solid fa-eye';
             }
             
             // Re-render all lucide icons

@@ -18,15 +18,15 @@
             <!-- Breadcrumb -->
             <div class="text-[11px] font-medium text-slate-500 mb-3 flex items-center gap-2">
                 <span class="hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1.5">
-                    <i class="w-3.5 h-3.5" data-lucide="bar-chart-2"></i> Report
+                    <i class="fa-solid fa-chart-line text-[12px]"></i> Report
                 </span>
-                <i class="w-3 h-3 text-slate-300" data-lucide="chevron-right"></i>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-300"></i>
                 <span class="text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-md text-[10px] tracking-wide shadow-sm">Geofence Location</span>
             </div>
             <!-- Title -->
             <div class="flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0052cc] to-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                    <i class="w-5 h-5" data-lucide="map-pinned"></i>
+                    <i class="fa-solid fa-map-location-dot text-[20px]"></i>
                 </div>
                 <h1 class="text-2xl md:text-[28px] font-[900] text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight leading-none">Pengaturan Radius Geofence</h1>
             </div>
@@ -54,29 +54,29 @@
         <!-- Left: List Locations -->
         <div class="lg:col-span-4 flex flex-col gap-4">
             <h3 class="font-extrabold text-slate-800 text-[15px] flex justify-between items-center">
-                <span class="flex items-center gap-2"><i class="w-4 h-4 text-emerald-500" data-lucide="building-2"></i> Daftar Area Kerja</span>
+                <span class="flex items-center gap-2"><i class="fa-solid fa-building text-emerald-500"></i> Daftar Area Kerja</span>
                 <button onclick="createNewLocation()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
-                    <i class="w-3.5 h-3.5" data-lucide="plus"></i> Tambah
+                    <i class="fa-solid fa-plus text-[10px]"></i> Tambah
                 </button>
             </h3>
             <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col">
                 <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex flex-col gap-3">
                     <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex justify-between items-center">
-                        <span>Mitra / Distrik</span>
+                        <span>Mitra Kerja</span>
                         <span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full transition-all" id="locationCountbadge">{{ count($locations) }} Data</span>
                     </div>
                     <!-- Search Input -->
                     <div class="relative">
-                        <i class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" data-lucide="search"></i>
+                        <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-[12px]"></i>
                         <input type="text" id="searchLocationInput" placeholder="Cari nama mitra/area..." class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-[12px] font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm">
                     </div>
                 </div>
                 <div class="flex flex-col max-h-[550px] overflow-y-auto divide-y divide-slate-100">
                     @forelse($locations as $loc)
-                        <button type="button" onclick="selectLocation({{ json_encode($loc) }})" class="location-item-btn px-5 py-4 hover:bg-blue-50/50 transition-colors text-left group focus:bg-blue-50 focus:outline-none w-full block">
+                        <button type="button" onclick='selectLocation({{ json_encode($loc) }})' class="location-item-btn px-5 py-4 hover:bg-blue-50/50 transition-colors text-left group focus:bg-blue-50 focus:outline-none w-full block">
                             <h4 class="location-title-text font-extrabold text-[#111827] text-[13px] group-hover:text-[#0052cc] transition-colors mb-1">{{ $loc['mitra_kerja_name'] }}</h4>
                             <div class="flex items-center justify-between text-[11px] font-medium text-slate-500">
-                                <span class="flex items-center gap-1.5"><i class="w-3.5 h-3.5 text-rose-500" data-lucide="map-pin"></i> 
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-map-pin text-rose-500 text-[12px]"></i> 
                                     @if($loc['latitude'] && $loc['longitude'])
                                         {{ Str::limit($loc['latitude'].', '.$loc['longitude'], 18) }}
                                     @else
@@ -84,7 +84,7 @@
                                     @endif
                                 </span>
                                 <span class="flex items-center gap-1.5 font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                                    <i class="w-3 h-3" data-lucide="scan"></i> {{ $loc['radius_meters'] ?? 50 }}m
+                                    <i class="fa-solid fa-expand text-[10px]"></i> {{ $loc['radius_meters'] ?? 50 }}m
                                 </span>
                             </div>
                         </button>
@@ -105,7 +105,7 @@
                     <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[400] w-11/12 max-w-md flex items-center bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] p-1.5 border border-slate-200/80 transition-all focus-within:ring-4 focus-within:ring-blue-500/20" id="mapSearchWrapper" style="display: none;">
                         <input type="text" id="mapSearchInput" placeholder="Cari kota, alamat, atau daerah tujuan PETA..." class="w-full bg-transparent border-none text-[13px] font-bold text-slate-800 outline-none px-3 focus:ring-0 placeholder:font-semibold placeholder:text-slate-400">
                         <button type="button" id="mapSearchBtn" class="bg-gradient-to-r from-blue-600 to-[#0052cc] hover:from-blue-700 hover:to-blue-800 text-white p-2.5 rounded-lg transition-colors flex-shrink-0 shadow-md">
-                            <i class="w-4 h-4" data-lucide="search"></i>
+                            <i class="fa-solid fa-magnifying-glass text-[14px]"></i>
                         </button>
                     </div>
 
@@ -114,7 +114,7 @@
                     <!-- Overlay if none selected -->
                     <div id="mapOverlay" class="absolute inset-0 z-[1000] bg-slate-900/5 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300">
                         <div class="bg-white px-6 py-4 rounded-xl shadow-2xl border border-slate-200/60 font-extrabold text-slate-700 text-sm flex items-center gap-3 animate-pulse">
-                            <div class="p-2 bg-blue-50 rounded-lg"><i class="w-5 h-5 text-[#0052cc]" data-lucide="mouse-pointer-click"></i></div>
+                            <div class="p-2 bg-blue-50 rounded-lg"><i class="fa-solid fa-arrow-pointer text-[#0052cc] text-[18px]"></i></div>
                             Pilih daftar area kerja di sebelah kiri terlebih dahulu!
                         </div>
                     </div>
@@ -131,14 +131,14 @@
 
                 <div class="flex items-center justify-between mb-8 border-b border-slate-100 pb-5">
                     <h3 class="font-extrabold text-slate-800 text-[17px] flex items-center gap-2 tracking-tight">
-                        <i class="w-5 h-5 text-[#0052cc]" data-lucide="crosshair"></i>
+                        <i class="fa-solid fa-crosshairs text-[#0052cc] text-[18px]"></i>
                         Target Konfigurasi: <span id="locNameDisplay" class="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 ml-1">...</span>
                     </h3>
                 </div>
 
                 <!-- Input Nama Khusus Add New -->
                 <div class="mb-6 hidden" id="nameInputWrapper">
-                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Mitra / Distrik Kerja Baru</label>
+                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Mitra Kerja</label>
                     <input type="text" id="nameInput" name="mitra_kerja_name" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" placeholder="Contoh: PT. ABC PERSADA / AREA BLOK A"/>
                 </div>
 
@@ -162,10 +162,10 @@
 
                 <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
                     <button type="button" id="btnDeleteGeofence" onclick="deleteCurrentGeofence()" class="hidden w-full sm:w-auto px-6 py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-[12px] rounded-xl transition-all uppercase tracking-widest items-center justify-center gap-2 border border-red-100">
-                        <i class="w-4 h-4" data-lucide="trash-2"></i> HAPUS AREA
+                        <i class="fa-solid fa-trash-can text-[14px]"></i> HAPUS AREA
                     </button>
                     <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
-                        <i class="w-4 h-4" data-lucide="satellite"></i> SIMPAN KOORDINAT
+                        <i class="fa-solid fa-satellite text-[14px]"></i> SIMPAN KOORDINAT
                     </button>
                 </div>
             </form>
@@ -307,8 +307,7 @@
         let query = mapSearchInput.value.trim();
         if(!query) return;
         
-        mapSearchBtn.innerHTML = '<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i>';
-        lucide.createIcons();
+        mapSearchBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
 
         // Menggunakan standard OpenStreetMap API Nominatim (Gratis tanpa key)
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
@@ -334,8 +333,7 @@
                 alert("Gagal mencari lokasi. Cek koneksi internet Anda.");
             })
             .finally(() => {
-                mapSearchBtn.innerHTML = '<i class="w-4 h-4" data-lucide="search"></i>';
-                lucide.createIcons();
+                mapSearchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
             });
     }
 

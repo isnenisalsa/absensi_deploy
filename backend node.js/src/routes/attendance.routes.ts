@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { checkIn, checkOut, getMyAttendance } from '../controllers/attendance.controller';
+import { checkIn, checkOut, getMyAttendance, getAllFtw } from '../controllers/attendance.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import { checkInSchema, checkOutSchema } from '../utils/schemas';
@@ -17,5 +17,8 @@ router.post('/check-out', validate(checkOutSchema), checkOut);
 
 // Sejarah Transaksi Absensi user tersebut
 router.get('/history', getMyAttendance);
+
+// Data FTW untuk Admin
+router.get('/ftw', getAllFtw);
 
 export default router;

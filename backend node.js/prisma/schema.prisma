@@ -7,6 +7,145 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model users {
+  nrp           String     @id @db.VarChar(255)
+  password_hash String     @db.VarChar(255)
+  role          user_roles
+  is_active     Boolean    @default(true)
+  employee      employees?
+}
+
+model mitra_kerja {
+  mitra_kerja_id   Int         @id @default(autoincrement())
+  mitra_kerja_name String      @db.VarChar(255)
+  latitude         Decimal?    @db.Decimal(10, 8)
+  longitude        Decimal?    @db.Decimal(11, 8)
+  radius_meters    Int         @default(50)
+  employees        employees[]
+}
+
+model departments {
+  dept_id   Int         @id @default(autoincrement())
+  dept_name String      @db.VarChar(255)
+  divisions divisions[]
+}
+
+model divisions {
+  div_id     Int         @id @default(autoincrement())
+  div_name   String      @db.VarChar(255)
+  dept_id    Int
+  department departments @relation(fields: [dept_id], references: [dept_id])
+  employees  employees[]
+
+  @@index([dept_id], map: "divisions_dept_id_fkey")
+}
+
+model positions {
+  pos_id    Int         @id @default(autoincrement())
+  pos_name  String      @db.VarChar(255)
+  employees employees[]
+}
+
+model districts {
+  dist_id   Int         @id @default(autoincrement())
+  dist_name String      @db.VarChar(255)
+  employees employees[]
+}
+
+model employees {
+  nrp                   String        @id @db.VarChar(255)
+  full_name             String        @db.VarChar(255)
+  pos_id                Int?
+  div_id                Int?
+  mitra_kerja_id        Int?
+  default_work_location String?       @db.VarChar(255)
+  dist_id               Int?
+  attendances           attendances[]
+  district              districts?    @relation(fields: [dist_id], references: [dist_id])
+  division              divisions?    @relation(fields: [div_id], references: [div_id])
+  mitra_kerja           mitra_kerja?  @relation(fields: [mitra_kerja_id], references: [mitra_kerja_id])
+  user                  users         @relation(fields: [nrp], references: [nrp])
+  position              positions?    @relation(fields: [pos_id], references: [pos_id])
+  ftw_reports           ftw_reports[]
+  rosters               rosters[]
+
+  @@index([dist_id], map: "employees_dist_id_fkey")
+  @@index([div_id], map: "employees_div_id_fkey")
+  @@index([mitra_kerja_id], map: "employees_mitra_kerja_id_fkey")
+  @@index([pos_id], map: "employees_pos_id_fkey")
+}
+
+model shifts {
+  shift_id          Int           @id @default(autoincrement())
+  shift_code        String        @db.VarChar(255)
+  time_in_expected  DateTime      @db.Time(0)
+  time_out_expected DateTime      @db.Time(0)
+  date_in           DateTime?     @db.Date
+  date_out          DateTime?     @db.Date
+  attendances       attendances[]
+  rosters           rosters[]
+}
+
+model attendances {
+  att_id          String      @id @default(uuid())
+  nrp             String      @db.VarChar(255)
+  attendance_date DateTime    @db.Date
+  date_in         DateTime?   @db.Date
+  date_out        DateTime?   @db.Date
+  time_wita       DateTime    @db.Time(0)
+  time_wib        DateTime    @db.Time(0)
+  shift_id        Int
+  trans_type      trans_types
+  cp_location     String?     @db.VarChar(255)
+  work_location   String?     @db.VarChar(255)
+  att_latitude    Decimal?    @db.Decimal(10, 8)
+  att_longitude   Decimal?    @db.Decimal(11, 8)
+  att_map_link    String?     @db.Text
+  photo_evidence  String?     @db.VarChar(255)
+  device_ip       String?     @db.VarChar(45)
+  employee        employees   @relation(fields: [nrp], references: [nrp])
+  shift           shifts      @relation(fields: [shift_id], references: [shift_id])
+
+  @@index([nrp], map: "attendances_nrp_fkey")
+  @@index([shift_id], map: "attendances_shift_id_fkey")
+}
+
+model rosters {
+  id            Int       @id @default(autoincrement())
+  nrp           String    @db.VarChar(255)
+  date          DateTime  @db.Date
+  date_in       DateTime? @db.Date
+  date_out      DateTime? @db.Date
+  shift_id      Int?
+  work_location String?   @db.VarChar(255)
+  employee      employees @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
+  shift         shifts?   @relation(fields: [shift_id], references: [shift_id])
+
+  @@unique([nrp, date])
+  @@index([shift_id], map: "rosters_shift_id_fkey")
+}
+
+model ftw_reports {
+  id                Int       @id @default(autoincrement())
+  nrp               String    @db.VarChar(255)
+  ftw_date          DateTime  @db.Date
+  kehadiran_onsite  Boolean   @default(true)
+  unit_dioperasikan String?   @db.VarChar(255)
+  pola_shift        String    @db.VarChar(50)
+  shift             String    @db.VarChar(50)
+  jam_tidur_12_jam  String    @db.VarChar(50)
+  jam_tidur_36_jam  String    @db.VarChar(50)
+  jam_bangun        String    @db.VarChar(5)
+  konsumsi_obat     Boolean
+  punya_masalah     Boolean
+  gejala_kesehatan  Boolean
+  status_ftw        String?   @db.VarChar(50)
+  created_at        DateTime  @default(now())
+  employee          employees @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
+
+  @@unique([nrp, ftw_date])
+}
+
 enum user_roles {
   admin
   safety
@@ -19,86 +158,4 @@ enum trans_types {
   Check_out @map("Check-out")
   Izin
   Sakit
-}
-
-model users {
-  nrp           String      @id @db.VarChar(255)
-  password_hash String      @db.VarChar(255)
-  role          user_roles
-  is_active     Boolean     @default(true)
-  employee      employees?
-}
-
-model mitra_kerja {
-  mitra_kerja_id   Int         @id @default(autoincrement())
-  mitra_kerja_name String      @db.VarChar(255)
-  latitude         Decimal?    @db.Decimal(10, 8)
-  longitude        Decimal?    @db.Decimal(11, 8)
-  radius_meters    Int         @default(50)
-  
-  employees        employees[]
-}
-
-model departments {
-  dept_id   Int         @id @default(autoincrement())
-  dept_name String      @db.VarChar(255)
-  divisions divisions[]
-}
-
-model divisions {
-  div_id    Int         @id @default(autoincrement())
-  div_name  String      @db.VarChar(255)
-  dept_id   Int
-  
-  department departments  @relation(fields: [dept_id], references: [dept_id])
-  employees  employees[]
-}
-
-model positions {
-  pos_id    Int         @id @default(autoincrement())
-  pos_name  String      @db.VarChar(255)
-  employees employees[]
-}
-
-model employees {
-  nrp                   String        @id @db.VarChar(255)
-  full_name             String        @db.VarChar(255)
-  pos_id                Int?
-  div_id                Int?
-  mitra_kerja_id        Int?
-  default_work_location String?       @db.VarChar(255)
-  
-  user                  users         @relation(fields: [nrp], references: [nrp])
-  position              positions?    @relation(fields: [pos_id], references: [pos_id])
-  division              divisions?    @relation(fields: [div_id], references: [div_id])
-  mitra_kerja           mitra_kerja?  @relation(fields: [mitra_kerja_id], references: [mitra_kerja_id])
-  attendances           attendances[]
-}
-
-model shifts {
-  shift_id          Int           @id @default(autoincrement())
-  shift_code        String        @db.VarChar(255)
-  time_in_expected  DateTime      @db.Time
-  time_out_expected DateTime      @db.Time
-  attendances       attendances[]
-}
-
-model attendances {
-  att_id        String      @id @default(uuid())
-  nrp           String      @db.VarChar(255)
-  attendance_date DateTime  @db.Date
-  time_wita     DateTime    @db.Time
-  time_wib      DateTime    @db.Time
-  shift_id      Int
-  trans_type    trans_types
-  cp_location   String?     @db.VarChar(255)
-  work_location String?     @db.VarChar(255)
-  att_latitude  Decimal?    @db.Decimal(10, 8)
-  att_longitude Decimal?    @db.Decimal(11, 8)
-  att_map_link  String?     @db.Text
-  photo_evidence String?    @db.VarChar(255)
-  device_ip     String?     @db.VarChar(45)
-
-  employee      employees   @relation(fields: [nrp], references: [nrp])
-  shift         shifts      @relation(fields: [shift_id], references: [shift_id])
 }

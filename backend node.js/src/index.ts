@@ -10,6 +10,9 @@ import { errorHandler } from './middlewares/error.middleware';
 import authRoutes from './routes/auth.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import masterRoutes from './routes/master.routes';
+import employeeRoutes from './routes/employee.routes';
+import rosterRoutes from './routes/roster.routes';
+import userRoutes from './routes/user.routes';
 
 const app = express();
 
@@ -37,6 +40,9 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/master', masterRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/rosters', rosterRoutes);
+app.use('/api/users', userRoutes);
 
 // Penanganan Route NotFound
 app.use((req, res, next) => {
