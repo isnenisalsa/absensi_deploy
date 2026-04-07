@@ -75,6 +75,23 @@
         </div>
     @endif
 
+    <!-- Shift Legend -->
+    <div class="flex flex-wrap gap-4 mb-6">
+        @foreach($shifts as $s)
+        <div class="bg-white border border-slate-100 rounded-xl px-4 py-2 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[11px] font-black text-blue-700 border border-blue-100">
+                {{ $s['shift_code'] }}
+            </div>
+            <div>
+                <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Jam Kerja</div>
+                <div class="text-[11px] font-bold text-slate-700 leading-none">
+                    {{ date('H:i', strtotime($s['time_in_expected'])) }} - {{ date('H:i', strtotime($s['time_out_expected'])) }}
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+
     <!-- Roster Grid -->
     <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
         <div class="overflow-x-auto">
@@ -138,6 +155,9 @@
                                         {{ $rData ? ($rData['shift_code'] == 'OFF' ? 'bg-red-50/30' : 'bg-blue-50/50') : 'bg-slate-50/20' }}">
                                     @if($rData)
                                         <span class="text-[10px] font-black {{ $rData['shift_code'] == 'OFF' ? 'text-rose-500' : 'text-blue-700' }}">{{ $rData['shift_code'] }}</span>
+                                        @if($rData['shift_code'] != 'OFF')
+                                            <span class="text-[8px] font-bold text-slate-400 mt-0.5 leading-none">{{ $rData['time_in'] }}-{{ $rData['time_out'] }}</span>
+                                        @endif
                                         @if($rData['work_location'])
                                             <span class="text-[7px] font-extrabold text-blue-600 truncate max-w-full px-1 bg-white border border-blue-100 rounded mt-1 shadow-sm">{{ $rData['work_location'] }}</span>
                                         @endif
@@ -215,7 +235,7 @@
                     <select name="work_location" class="searchable-select w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[12px] font-bold text-slate-800 outline-none focus:bg-white focus:border-blue-500 transition-all cursor-pointer">
                         <option value="">- Silahkan pilih Lokasi -</option>
                         @foreach($geofences as $g)
-                        <option value="{{ $g['mitra_kerja_name'] }}">{{ $g['mitra_kerja_name'] }}</option>
+                        <option value="{{ $g['location_name'] }}">{{ $g['location_name'] }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -229,7 +249,7 @@
                             <input type="radio" name="shift_id" value="{{ $s['shift_id'] }}" id="radio-bulk-{{ $s['shift_id'] }}" class="peer hidden" required>
                             <div class="p-2 border border-slate-200 rounded-xl text-center peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all hover:bg-slate-50">
                                 <div class="text-[11px] font-black uppercase">{{ $s['shift_code'] }}</div>
-                                <div class="text-[8px] font-bold opacity-70">{{ date('H:i', strtotime($s['time_in_expected'])) }}</div>
+                                <div class="text-[8px] font-bold opacity-70">{{ date('H:i', strtotime($s['time_in_expected'])) }} - {{ date('H:i', strtotime($s['time_out_expected'])) }}</div>
                             </div>
                         </label>
                         @endforeach
@@ -264,7 +284,7 @@
                     <select name="work_location" id="singleLocationDisplay" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[12px] font-bold text-slate-800 outline-none">
                         <option value="">- Silahkan pilih Lokasi -</option>
                         @foreach($geofences as $g)
-                        <option value="{{ $g['mitra_kerja_name'] }}">{{ $g['mitra_kerja_name'] }}</option>
+                        <option value="{{ $g['location_name'] }}">{{ $g['location_name'] }}</option>
                         @endforeach
                     </select>
                 </div>

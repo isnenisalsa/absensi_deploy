@@ -29,6 +29,18 @@ class AuthController extends Controller
                 // Store token and user data in session
                 Session::put('api_token', $data['token'] ?? null);
                 Session::put('user', $data['user'] ?? null);
+                
+                // Helper session keys for easier access
+                Session::put('user_role', $data['user']['role'] ?? null);
+                Session::put('mitra_id', $data['user']['mitra_id'] ?? null);
+
+                // Restrict employee accounts from accessing the admin website
+                if (($data['user']['role'] ?? '') === 'employee') {
+                    Session::forget(['api_token', 'user', 'user_role', 'mitra_id']);
+                    return back()->withErrors([
+                        'nrp' => 'Akun anda tidak memiliki akses ke portal admin. Silahkan gunakan aplikasi mobile.',
+                    ]);
+                }
 
                 return redirect()->intended('/select-profile')->with('success', 'Berhasil login!');
             }

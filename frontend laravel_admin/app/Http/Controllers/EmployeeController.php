@@ -33,11 +33,11 @@ class EmployeeController extends Controller
             return [
                 'nrp' => $emp['nrp'],
                 'full_name' => $emp['full_name'],
-                'pos_id' => $emp['pos_id'] ?? null,
-                'div_id' => $emp['div_id'] ?? null,
-                'mitra_kerja_id' => $emp['mitra_kerja_id'] ?? null,
+                'location_id' => $emp['location_id'] ?? null,
                 'position' => ['pos_name' => $emp['position']['pos_name'] ?? '-'],
                 'division' => ['div_name' => $emp['division']['div_name'] ?? '-'],
+                'location' => ['location_name' => $emp['location']['location_name'] ?? '-'],
+                'mitra' => ['mitra_name' => $emp['mitra']['mitra_name'] ?? '-'],
                 'user' => [
                     'role' => $emp['user']['role'] ?? 'employee',
                     'is_active' => $emp['user']['is_active'] ?? false
@@ -52,13 +52,16 @@ class EmployeeController extends Controller
         $resDivs = Http::withToken($token)->get("http://localhost:3000/api/master/divisions");
         $divs = $resDivs->successful() ? $resDivs->json() : [];
 
-        $resMitras = Http::withToken($token)->get("http://localhost:3000/api/master/mitra-kerja");
-        $mitras = $resMitras->successful() ? $resMitras->json() : [];
+        $resLocations = Http::withToken($token)->get("http://localhost:3000/api/master/locations");
+        $locations = $resLocations->successful() ? $resLocations->json() : [];
 
         $resPos = Http::withToken($token)->get("http://localhost:3000/api/master/positions");
         $positions = $resPos->successful() ? $resPos->json() : [];
 
-        return view('employees.index', compact('employees', 'deps', 'divs', 'mitras', 'positions'));
+        $resMitras = Http::withToken($token)->get("http://localhost:3000/api/master/mitras");
+        $mitras = $resMitras->successful() ? $resMitras->json() : [];
+
+        return view('employees.index', compact('employees', 'deps', 'divs', 'locations', 'positions', 'mitras'));
     }
 
     public function store(Request $request)

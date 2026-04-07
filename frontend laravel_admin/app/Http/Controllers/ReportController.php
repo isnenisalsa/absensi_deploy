@@ -28,22 +28,20 @@ class ReportController extends Controller
             $resDivs = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/divisions");
             $divs = $resDivs->successful() ? $resDivs->json() : [];
 
-            $resMitras = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/mitra-kerja");
-            $mitras = $resMitras->successful() ? $resMitras->json() : [];
+            $resLocations = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/locations");
+            $locations = $resLocations->successful() ? $resLocations->json() : [];
 
-            $resDists = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/master/districts");
-            $districts = $resDists->successful() ? $resDists->json() : [];
 
         } catch (\Exception $e) {
             $attendances = [];
-            $deps = []; $divs = []; $mitras = []; $districts = [];
+            $deps = []; $divs = []; $locations = [];
         }
         
         // Default tanggal: awal bulan ini s/d hari ini
         $startDate = $request->query('start_date', date('Y-m-01'));
         $endDate = $request->query('end_date', date('Y-m-d'));
 
-        return view('report.history', compact('attendances', 'deps', 'divs', 'mitras', 'districts', 'startDate', 'endDate'));
+        return view('report.history', compact('attendances', 'deps', 'divs', 'locations', 'startDate', 'endDate'));
     }
 
     public function exportExcel(Request $request)
@@ -74,7 +72,7 @@ class ReportController extends Controller
 
         $columns = [
             'Attendance Date', 'Attendance Hour', 'NRP', 'Nama Lengkap', 
-            'Distrik', 'Posisi', 'Divisi', 'Trans', 'Lokasi', 'CP Location', 'Att Location'
+            'Posisi', 'Divisi', 'Trans', 'Lokasi', 'CP Location', 'Att Location'
         ];
 
         $callback = function() use($attendances, $columns) {
@@ -100,7 +98,6 @@ class ReportController extends Controller
                     $waktuAbsen,
                     $row['nrp'] ?? '-',
                     $namaKaryawan,
-                    $row['employee']['mitra_kerja']['mitra_kerja_name'] ?? '-',
                     $row['employee']['position']['pos_name'] ?? '-',
                     $row['employee']['division']['div_name'] ?? '-',
                     $transLabel,
@@ -122,7 +119,7 @@ class ReportController extends Controller
 
         try {
             $response = \Illuminate\Support\Facades\Http::withToken(Session::get('api_token'))
-                ->get('http://localhost:3000/api/master/mitra-kerja');
+                ->get('http://localhost:3000/api/master/locations');
             $locations = $response->successful() ? $response->json() : [];
         } catch (\Exception $e) {
             $locations = [];
@@ -137,7 +134,7 @@ class ReportController extends Controller
 
         try {
             $response = \Illuminate\Support\Facades\Http::withToken(Session::get('api_token'))
-                ->put("http://localhost:3000/api/master/mitra-kerja/{$id}", [
+                ->put("http://localhost:3000/api/master/locations/{$id}", [
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'radius_meters' => $request->radius_meters,
@@ -158,8 +155,8 @@ class ReportController extends Controller
 
         try {
             $response = \Illuminate\Support\Facades\Http::withToken(Session::get('api_token'))
-                ->post("http://localhost:3000/api/master/mitra-kerja", [
-                'mitra_kerja_name' => $request->mitra_kerja_name,
+                ->post("http://localhost:3000/api/master/locations", [
+                'location_name' => $request->location_name,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'radius_meters' => $request->radius_meters,
@@ -180,7 +177,7 @@ class ReportController extends Controller
 
         try {
             $response = \Illuminate\Support\Facades\Http::withToken(Session::get('api_token'))
-                ->delete("http://localhost:3000/api/master/mitra-kerja/{$id}");
+                ->delete("http://localhost:3000/api/master/locations/{$id}");
             
             if ($response->successful()) {
                 return redirect()->back()->with('success', 'Lokasi geofence berhasil dihapus secara permanen!');
@@ -253,5 +250,73 @@ class ReportController extends Controller
         }, $rawReports);
 
         return view('report.ftw', compact('reports', 'totalFit', 'totalUnfit', 'filterDate'));
+    }
+
+    public function exportFtw(Request $request)
+    {
+        if (!Session::has('api_token')) return redirect('/login');
+        $token = Session::get('api_token');
+        $filterDate = $request->query('filter_date', date('Y-m-d'));
+        
+        try {
+            $response = \Illuminate\Support\Facades\Http::withToken($token)->get("http://localhost:3000/api/attendance/ftw", [
+                'filter_date' => $filterDate
+            ]);
+            $rawReports = $response->successful() ? $response->json() : [];
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Gagal export FTW.']);
+        }
+
+        $fileName = "Report_FTW_{$filterDate}.csv";
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['NRP', 'Nama Karyawan', 'Tanggal FTW', 'Unit', 'Jam Tidur', 'Jam Bangun', 'Gejala', 'Obat', 'Masalah', 'Status', 'Alasan Unfit'];
+
+        $callback = function() use($rawReports, $columns) {
+            $file = fopen('php://output', 'w');
+            fputs($file, (chr(0xEF) . chr(0xBB) . chr(0xBF))); // BOM
+            fputcsv($file, $columns, ';');
+
+            foreach ($rawReports as $ftw) {
+                // Evaluasi status seperti di view
+                $isGejala = filter_var($ftw['gejala_kesehatan'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $isObat = filter_var($ftw['konsumsi_obat'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $isMasalah = filter_var($ftw['punya_masalah'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $jam_tidur = strtoupper($ftw['jam_tidur_12_jam'] ?? '');
+                $isFatigue = in_array($jam_tidur, ['KR 1 JAM', '2 JAM', '4 JAM']);
+                
+                $isUnfit = $isGejala || $isObat || $isMasalah || $isFatigue;
+                $status = $isUnfit ? 'UNFIT' : 'FIT';
+
+                $reasons = [];
+                if ($isGejala) $reasons[] = 'Gejala/Sakit';
+                if ($isObat) $reasons[] = 'Obat Kantuk';
+                if ($isMasalah) $reasons[] = 'Masalah Personal';
+                if ($isFatigue) $reasons[] = 'Kurang Tidur';
+
+                fputcsv($file, [
+                    $ftw['nrp'],
+                    $ftw['employee']['full_name'] ?? '-',
+                    $ftw['ftw_date'] ?? '-',
+                    $ftw['unit_dioperasikan'] ?? '-',
+                    $ftw['jam_tidur_12_jam'] ?? '-',
+                    $ftw['jam_bangun'] ?? '-',
+                    $isGejala ? 'YA' : 'TIDAK',
+                    $isObat ? 'YA' : 'TIDAK',
+                    $isMasalah ? 'YA' : 'TIDAK',
+                    $status,
+                    !empty($reasons) ? implode(', ', $reasons) : '-'
+                ], ';');
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

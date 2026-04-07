@@ -30,7 +30,7 @@
                     $filters = [
                         ['label' => 'Divisi', 'name' => 'divisi', 'data' => $divs, 'key' => 'div_id', 'val' => 'div_name'],
                         ['label' => 'Dept', 'name' => 'dept', 'data' => $deps, 'key' => 'dept_id', 'val' => 'dept_name'],
-                        ['label' => 'Perusahaan', 'name' => 'perusahaan', 'data' => $mitras, 'key' => 'mitra_kerja_id', 'val' => 'mitra_kerja_name'],
+                        ['label' => 'Lokasi Kerja', 'name' => 'lokasi', 'data' => $locations, 'key' => 'location_id', 'val' => 'location_name'],
                     ];
                 @endphp
 

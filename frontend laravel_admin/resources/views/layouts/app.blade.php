@@ -231,22 +231,24 @@
                                     <i class="fa-solid fa-folder-tree text-[12px] mr-2"></i>
                                     <span class="text-[12px] font-bold">Divisi</span>
                                 </a>
-                                <a href="{{ route('master.districts') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.districts') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
-                                    <i class="fa-solid fa-map-location text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Distrik</span>
-                                </a>
                                 <a href="{{ route('master.positions') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.positions') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-id-badge text-[12px] mr-2"></i>
                                     <span class="text-[12px] font-bold">Jabatan</span>
                                 </a>
                                 <a href="{{ route('report.geofence') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('report.geofence') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
+                                    <i class="fa-solid fa-location-dot text-[12px] mr-2"></i>
+                                    <span class="text-[12px] font-bold">Geofence (Setting)</span>
+                                </a>
+                                <a href="{{ route('master.locations') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.locations') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-map-location-dot text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Geofence</span>
+                                    <span class="text-[12px] font-bold">Lokasi Kerja</span>
                                 </a>
-                                <a href="{{ route('master.mitra') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.mitra') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
-                                    <i class="fa-solid fa-handshake text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Mitra Kerja</span>
+                                @if(session('user.role') === 'admin' && session('user.mitra_id') === null)
+                                <a href="{{ route('master.mitra') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.mitra') ? 'text-indigo-600 font-black' : 'text-slate-500 hover:text-slate-100 dark:hover:text-white' }}">
+                                    <i class="fa-solid fa-handshake text-[12px] mr-2 text-indigo-500"></i>
+                                    <span class="text-[12px] font-bold">Mitra Kerja (Subcon)</span>
                                 </a>
+                                @endif
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../utils/jwt';
+import { prisma } from '../utils/db';
 
 // Menambahkan property user ke object Request milik Express
 declare global {
@@ -10,7 +11,7 @@ declare global {
   }
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -22,6 +23,23 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   const decoded = verifyToken(token);
   if (!decoded) {
     res.status(403).json({ error: 'Token tidak valid atau sudah kedaluwarsa.' });
+    return;
+  }
+
+  // Check if session exists and is active in database
+  const session = await prisma.user_sessions.findFirst({
+    where: {
+      token: token,
+      nrp: decoded.nrp,
+      is_active: true,
+      expires_at: {
+        gt: new Date()
+      }
+    }
+  });
+
+  if (!session) {
+    res.status(401).json({ error: 'Sesi Anda telah berakhir atau tidak valid. Silakan login kembali.' });
     return;
   }
 

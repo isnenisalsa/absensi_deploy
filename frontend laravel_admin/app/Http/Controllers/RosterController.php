@@ -26,7 +26,7 @@ class RosterController extends Controller
         $employees = $employeesRes->successful() ? $employeesRes->json() : [];
 
         // Fetch Shifts
-        $shiftsRes = Http::withToken($token)->get("{$this->apiUrl}/shifts");
+        $shiftsRes = Http::withToken($token)->get("{$this->apiUrl}/master/shifts");
         $shifts = $shiftsRes->successful() ? $shiftsRes->json() : [];
 
         // Fetch Rosters for selected month/year
@@ -36,9 +36,9 @@ class RosterController extends Controller
         ]);
         $rosters = $rostersRes->successful() ? $rostersRes->json() : [];
 
-        // Fetch Geofences (Mitra Kerja)
-        $mitraRes = Http::withToken($token)->get("{$this->apiUrl}/master/mitra-kerja");
-        $geofences = $mitraRes->successful() ? $mitraRes->json() : [];
+        // Fetch Geofences (Lokasi Kerja)
+        $locationsRes = Http::withToken($token)->get("{$this->apiUrl}/master/locations");
+        $geofences = $locationsRes->successful() ? $locationsRes->json() : [];
 
         return view('rosters.index', compact('employees', 'shifts', 'rosters', 'month', 'year', 'geofences'));
     }
@@ -61,7 +61,14 @@ class RosterController extends Controller
         $rosterMap = [];
         foreach($rosters as $r) {
             $day = (int)date('d', strtotime($r['date']));
-            $rosterMap[$r['nrp']][$day] = $r['shift']['shift_code'] ?? 'OFF';
+            $code = $r['shift']['shift_code'] ?? 'OFF';
+            $times = '';
+            if ($code !== 'OFF' && isset($r['shift']['time_in_expected'])) {
+                $tIn = date('H:i', strtotime($r['shift']['time_in_expected']));
+                $tOut = date('H:i', strtotime($r['shift']['time_out_expected']));
+                $times = " ($tIn-$tOut)";
+            }
+            $rosterMap[$r['nrp']][$day] = $code . $times;
         }
 
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$month, (int)$year);
@@ -80,6 +87,7 @@ class RosterController extends Controller
 
         $callback = function() use($employees, $rosterMap, $daysInMonth, $columns) {
             $file = fopen('php://output', 'w');
+            fputs($file, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF))); // Excel BOM
             fputcsv($file, $columns, ';');
             foreach($employees as $emp) {
                 $row = [$emp['nrp'], $emp['full_name']];
@@ -100,7 +108,7 @@ class RosterController extends Controller
         $token = session('api_token');
 
         // Fetch Shifts for mapping code to ID
-        $shiftsRes = Http::withToken($token)->get("{$this->apiUrl}/shifts");
+        $shiftsRes = Http::withToken($token)->get("{$this->apiUrl}/master/shifts");
         $shifts = $shiftsRes->successful() ? $shiftsRes->json() : [];
         $shiftMap = [];
         foreach($shifts as $s) { $shiftMap[strtoupper($s['shift_code'])] = $s['shift_id']; }

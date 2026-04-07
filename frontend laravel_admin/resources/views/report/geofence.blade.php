@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Geofence Location')
+@section('title', 'Geofence & Lokasi')
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -21,19 +21,19 @@
                     <i class="fa-solid fa-chart-line text-[12px]"></i> Report
                 </span>
                 <i class="fa-solid fa-chevron-right text-[10px] text-slate-300"></i>
-                <span class="text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-md text-[10px] tracking-wide shadow-sm">Geofence Location</span>
+                <span class="text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-md text-[10px] tracking-wide shadow-sm">Pengaturan Lokasi & Geofence</span>
             </div>
             <!-- Title -->
             <div class="flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0052cc] to-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                     <i class="fa-solid fa-map-location-dot text-[20px]"></i>
                 </div>
-                <h1 class="text-2xl md:text-[28px] font-[900] text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight leading-none">Pengaturan Radius Geofence</h1>
+                <h1 class="text-2xl md:text-[28px] font-[900] text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight leading-none">Radius Geofence Presensi</h1>
             </div>
         </div>
         
         <div class="hidden md:block max-w-sm text-xs font-medium text-slate-500 text-right leading-relaxed">
-            Sesuaikan titik pusat kordinat (Latitude/Longitude) dan leluasa ubah batas radius Absensi Karyawan Anda yang terhubung dengan API batas jangkauan aplikasi Flutter.
+            Sesuaikan titik pusat koordinat (Latitude/Longitude) dan leluasa ubah batas radius Absensi Karyawan Anda yang terhubung dengan API batas jangkauan aplikasi Flutter.
         </div>
     </div>
 
@@ -54,7 +54,7 @@
         <!-- Left: List Locations -->
         <div class="lg:col-span-4 flex flex-col gap-4">
             <h3 class="font-extrabold text-slate-800 text-[15px] flex justify-between items-center">
-                <span class="flex items-center gap-2"><i class="fa-solid fa-building text-emerald-500"></i> Daftar Area Kerja</span>
+                <span class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-emerald-500"></i> Daftar Lokasi Kerja</span>
                 <button onclick="createNewLocation()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
                     <i class="fa-solid fa-plus text-[10px]"></i> Tambah
                 </button>
@@ -62,19 +62,19 @@
             <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col">
                 <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex flex-col gap-3">
                     <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex justify-between items-center">
-                        <span>Mitra Kerja</span>
+                        <span>Pilih Lokasi</span>
                         <span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full transition-all" id="locationCountbadge">{{ count($locations) }} Data</span>
                     </div>
                     <!-- Search Input -->
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 text-[12px]"></i>
-                        <input type="text" id="searchLocationInput" placeholder="Cari nama mitra/area..." class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-[12px] font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm">
+                        <input type="text" id="searchLocationInput" placeholder="Cari nama lokasi/area..." class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-[12px] font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm">
                     </div>
                 </div>
                 <div class="flex flex-col max-h-[550px] overflow-y-auto divide-y divide-slate-100">
                     @forelse($locations as $loc)
                         <button type="button" onclick='selectLocation({{ json_encode($loc) }})' class="location-item-btn px-5 py-4 hover:bg-blue-50/50 transition-colors text-left group focus:bg-blue-50 focus:outline-none w-full block">
-                            <h4 class="location-title-text font-extrabold text-[#111827] text-[13px] group-hover:text-[#0052cc] transition-colors mb-1">{{ $loc['mitra_kerja_name'] }}</h4>
+                            <h4 class="location-title-text font-extrabold text-[#111827] text-[13px] group-hover:text-[#0052cc] transition-colors mb-1">{{ $loc['location_name'] }}</h4>
                             <div class="flex items-center justify-between text-[11px] font-medium text-slate-500">
                                 <span class="flex items-center gap-1.5"><i class="fa-solid fa-map-pin text-rose-500 text-[12px]"></i> 
                                     @if($loc['latitude'] && $loc['longitude'])
@@ -89,7 +89,7 @@
                             </div>
                         </button>
                     @empty
-                        <div class="p-8 text-center text-slate-400 text-xs font-bold">Belum ada data geofence (Mitra Kerja kosong).</div>
+                        <div class="p-8 text-center text-slate-400 text-xs font-bold">Belum ada data Lokasi Kerja.</div>
                     @endforelse
                 </div>
             </div>
@@ -101,7 +101,7 @@
             <div class="bg-white p-2 rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100">
                 <div class="w-full relative rounded-xl overflow-hidden shadow-inner border border-slate-100 group">
                     
-                    <!-- Google Maps Style Search Bar overlay -->
+                    <!-- Search Bar overlay -->
                     <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[400] w-11/12 max-w-md flex items-center bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] p-1.5 border border-slate-200/80 transition-all focus-within:ring-4 focus-within:ring-blue-500/20" id="mapSearchWrapper" style="display: none;">
                         <input type="text" id="mapSearchInput" placeholder="Cari kota, alamat, atau daerah tujuan PETA..." class="w-full bg-transparent border-none text-[13px] font-bold text-slate-800 outline-none px-3 focus:ring-0 placeholder:font-semibold placeholder:text-slate-400">
                         <button type="button" id="mapSearchBtn" class="bg-gradient-to-r from-blue-600 to-[#0052cc] hover:from-blue-700 hover:to-blue-800 text-white p-2.5 rounded-lg transition-colors flex-shrink-0 shadow-md">
@@ -115,7 +115,7 @@
                     <div id="mapOverlay" class="absolute inset-0 z-[1000] bg-slate-900/5 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300">
                         <div class="bg-white px-6 py-4 rounded-xl shadow-2xl border border-slate-200/60 font-extrabold text-slate-700 text-sm flex items-center gap-3 animate-pulse">
                             <div class="p-2 bg-blue-50 rounded-lg"><i class="fa-solid fa-arrow-pointer text-[#0052cc] text-[18px]"></i></div>
-                            Pilih daftar area kerja di sebelah kiri terlebih dahulu!
+                            Pilih daftar lokasi kerja di sebelah kiri terlebih dahulu!
                         </div>
                     </div>
                 </div>
@@ -132,14 +132,14 @@
                 <div class="flex items-center justify-between mb-8 border-b border-slate-100 pb-5">
                     <h3 class="font-extrabold text-slate-800 text-[17px] flex items-center gap-2 tracking-tight">
                         <i class="fa-solid fa-crosshairs text-[#0052cc] text-[18px]"></i>
-                        Target Konfigurasi: <span id="locNameDisplay" class="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 ml-1">...</span>
+                        Konfigurasi: <span id="locNameDisplay" class="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 ml-1">...</span>
                     </h3>
                 </div>
 
                 <!-- Input Nama Khusus Add New -->
                 <div class="mb-6 hidden" id="nameInputWrapper">
-                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Mitra Kerja</label>
-                    <input type="text" id="nameInput" name="mitra_kerja_name" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" placeholder="Contoh: PT. ABC PERSADA / AREA BLOK A"/>
+                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Lokasi Kerja</label>
+                    <input type="text" id="nameInput" name="location_name" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" placeholder="Contoh: AREA BLOK A / MESS KARYAWAN"/>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8 relative z-10">
@@ -162,7 +162,7 @@
 
                 <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
                     <button type="button" id="btnDeleteGeofence" onclick="deleteCurrentGeofence()" class="hidden w-full sm:w-auto px-6 py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-[12px] rounded-xl transition-all uppercase tracking-widest items-center justify-center gap-2 border border-red-100">
-                        <i class="fa-solid fa-trash-can text-[14px]"></i> HAPUS AREA
+                        <i class="fa-solid fa-trash-can text-[14px]"></i> HAPUS AREAL
                     </button>
                     <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
                         <i class="fa-solid fa-satellite text-[14px]"></i> SIMPAN KOORDINAT
@@ -175,39 +175,23 @@
 @endsection
 
 @push('scripts')
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-    // Inisialisasi Peta Standar Jakarta (Monas)
     let map = L.map('map').setView([-6.175110, 106.827153], 15);
     
-    // (1) Aesthetic Map Tile dari CartoDB Voyager
     const mapDefault = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap',
-        subdomains: 'abcd',
-        maxZoom: 20
+        attribution: '&copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 20
     });
     
-    // (2) Satellite Map Tile (Esri World Imagery)
     const mapSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri',
-        maxZoom: 20
+        attribution: 'Tiles &copy; Esri', maxZoom: 20
     });
     
-    // (3) Terrain / Topo Map (Esri World Topo Map)
-    const mapTerrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri',
-        maxZoom: 20
-    });
-
-    // Taruh Default saat pertama kali
     mapDefault.addTo(map);
 
-    // Pasang Layer Control ala Google Maps
     const baseMaps = {
-        "🗺️ Peta Standard (Default)": mapDefault,
-        "🌍 Mode Satelit bumi": mapSatellite,
-        "⛰️ Medan & Rupa daratan": mapTerrain
+        "🗺️ Peta Standard": mapDefault,
+        "🌍 Mode Satelit": mapSatellite
     };
     L.control.layers(baseMaps, null, { position: 'bottomright' }).addTo(map);
 
@@ -219,21 +203,16 @@
     const updateUrlBase = "{{ url('report/geofence') }}";
     const methodField = document.getElementById('methodField');
     
-    // Elements DOM
     const latInput = document.getElementById('latInput');
     const lngInput = document.getElementById('lngInput');
     const radiusInput = document.getElementById('radiusInput');
     const radiusSlider = document.getElementById('radiusSlider');
     const locNameDisplay = document.getElementById('locNameDisplay');
 
-    // Custome Marker Icon aesthetic
     const customIcon = L.icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
     });
 
     function updateMapFeatures(lat, lng, radius) {
@@ -241,22 +220,13 @@
         if(currentCircle) map.removeLayer(currentCircle);
 
         let pos = [lat, lng];
-        
-        // Buat Marker yang bisa didrag Admin
         currentMarker = L.marker(pos, {draggable: true, icon: customIcon}).addTo(map);
-        
-        // Buat Lingkaran Radius Radar
         currentCircle = L.circle(pos, {
-            color: '#10b981',      // Emerald line
-            weight: 2,
-            fillColor: '#34d399',  // Emerald fill
-            fillOpacity: 0.25,
-            radius: radius
+            color: '#10b981', weight: 2, fillColor: '#34d399', fillOpacity: 0.25, radius: radius
         }).addTo(map);
 
         map.setView(pos, 16);
 
-        // Pantau event saat marker digeser/dilepas
         currentMarker.on('dragend', function (e) {
             let position = currentMarker.getLatLng();
             latInput.value = position.lat.toFixed(8);
@@ -265,9 +235,8 @@
         });
     }
 
-    // Ubah Posisi Geofence Hanya Dengan Klik Sembarang di Peta
     map.on('click', function(e) {
-        if(!form.action || form.action.endsWith('geofence')) return; // Jika terkunci
+        if(!form.action || form.action.endsWith('geofence')) return;
         let lat = e.latlng.lat;
         let lng = e.latlng.lng;
         let radius = parseInt(radiusInput.value) || 50;
@@ -277,7 +246,6 @@
         updateMapFeatures(lat, lng, radius);
     });
 
-    // Update Radius Realtime via Input Kotak & Tuas Slider
     [radiusInput, radiusSlider].forEach(el => {
         el.addEventListener('input', function(e) {
             let val = parseInt(e.target.value);
@@ -288,7 +256,6 @@
         });
     });
     
-    // Update Koordinat via Pengetikan Keyboard Manual
     [latInput, lngInput].forEach(el => {
         el.addEventListener('change', function() {
             let lat = parseFloat(latInput.value);
@@ -298,7 +265,6 @@
         });
     });
 
-    // Google Maps Style Address Geocoding Search
     const mapSearchInput = document.getElementById('mapSearchInput');
     const mapSearchBtn = document.getElementById('mapSearchBtn');
     const mapSearchWrapper = document.getElementById('mapSearchWrapper');
@@ -306,92 +272,49 @@
     function performMapSearch() {
         let query = mapSearchInput.value.trim();
         if(!query) return;
-        
         mapSearchBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
-
-        // Menggunakan standard OpenStreetMap API Nominatim (Gratis tanpa key)
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
             .then(res => res.json())
             .then(data => {
                 if(data && data.length > 0) {
                     let lat = parseFloat(data[0].lat);
-                    let lng = parseFloat(data[0].lon); // OSM key nya 'lon'
+                    let lng = parseFloat(data[0].lon);
                     let radius = parseInt(radiusInput.value) || 50;
-                    
                     latInput.value = lat.toFixed(8);
                     lngInput.value = lng.toFixed(8);
-                    
                     updateMapFeatures(lat, lng, radius);
-                    
-                    // Terbang ke Map
                     map.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
-                } else {
-                    alert("Lokasi tidak ditemukan dI Peta Global! Coba ketik secara lebih spesifik (E.g. Monas, Jakarta).");
                 }
             })
-            .catch(err => {
-                alert("Gagal mencari lokasi. Cek koneksi internet Anda.");
-            })
-            .finally(() => {
-                mapSearchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
-            });
+            .finally(() => { mapSearchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>'; });
     }
 
     mapSearchBtn.addEventListener('click', performMapSearch);
-    mapSearchInput.addEventListener('keypress', function(e) {
-        if(e.key === 'Enter') {
-            e.preventDefault();
-            performMapSearch();
-        }
-    });
+    mapSearchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') performMapSearch(); });
 
-    // Fitur Live Search untuk Filter Lokasi Geofence
     const searchLocationInput = document.getElementById('searchLocationInput');
     const locationItems = document.querySelectorAll('.location-item-btn');
-    const locationCountbadge = document.getElementById('locationCountbadge');
     
     if(searchLocationInput) {
         searchLocationInput.addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            let visibleCount = 0;
-            
             locationItems.forEach(item => {
                 const title = item.querySelector('.location-title-text').innerText.toLowerCase();
-                if(title.includes(searchTerm)) {
-                    item.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
+                item.style.display = title.includes(searchTerm) ? 'block' : 'none';
             });
-            
-            if(locationCountbadge) {
-                locationCountbadge.innerText = visibleCount + ' Data';
-                // Jika kosong, warnai merah
-                locationCountbadge.className = visibleCount === 0 
-                    ? "bg-red-50 text-red-600 px-2 py-0.5 rounded-full transition-all"
-                    : "bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full transition-all";
-            }
         });
     }
 
-    // Eksekutor Klik Dari Menu Card Kiri (Mode Edit)
     window.selectLocation = function(locData) {
-        // Hapus Kaca Kunci Peta
         overlay.style.opacity = '0';
         setTimeout(() => overlay.classList.add('hidden'), 300);
-        
-        // Buka Gembok Form & Tampilkan Global Search Bar
         form.classList.remove('opacity-50', 'pointer-events-none');
         mapSearchWrapper.style.display = 'flex';
-        mapSearchInput.value = '';
         
-        // Tampilkan tombol Edit dan ubah method ke PUT
         let delBtn = document.getElementById('btnDeleteGeofence');
         delBtn.classList.remove('hidden');
         delBtn.classList.add('flex');
         
-        // Persiapan Mode PUT (Edit)
         if(methodField) {
             methodField.disabled = false;
             methodField.value = 'PUT';
@@ -399,12 +322,9 @@
         document.getElementById('nameInputWrapper').classList.add('hidden');
         document.getElementById('nameInput').required = false;
 
-        // Kaitkan Form ke Route PUT database
-        form.action = `${updateUrlBase}/${locData.mitra_kerja_id}`;
-        locNameDisplay.textContent = locData.mitra_kerja_name;
-        locNameDisplay.className = "text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 ml-1";
+        form.action = `${updateUrlBase}/${locData.location_id}`;
+        locNameDisplay.textContent = locData.location_name;
 
-        // Default ke Ibukota Monas bila kordinat database murni null (Kopong)
         let lat = locData.latitude ? parseFloat(locData.latitude) : -6.175110;
         let lng = locData.longitude ? parseFloat(locData.longitude) : 106.827153;
         let radius = locData.radius_meters ? parseInt(locData.radius_meters) : 50;
@@ -415,35 +335,17 @@
         radiusSlider.value = radius;
 
         updateMapFeatures(lat, lng, radius);
-        
-        // Memaksa render ulang dimensi peta
-        setTimeout(() => { map.invalidateSize(); }, 400);
-
-        // Auto-Scroll Layar HP jika layar sempit
-        if(window.innerWidth < 1024) {
-            document.getElementById('map').scrollIntoView({behavior: 'smooth', block: 'center'});
-        }
+        setTimeout(() => map.invalidateSize(), 400);
     }
 
-    // Eksekutor Tombol Tambah Baru (Mode Create)
     window.createNewLocation = function() {
         overlay.style.opacity = '0';
         setTimeout(() => overlay.classList.add('hidden'), 300);
-        
         form.classList.remove('opacity-50', 'pointer-events-none');
         mapSearchWrapper.style.display = 'flex';
-        mapSearchInput.value = '';
+        document.getElementById('btnDeleteGeofence').classList.add('hidden');
         
-        // Sembunyikan tombol Delete untuk mode lokasi baru
-        let delBtn = document.getElementById('btnDeleteGeofence');
-        delBtn.classList.add('hidden');
-        delBtn.classList.remove('flex');
-        
-        // Persiapan Mode POST (Tambah)
-        if(methodField) {
-            methodField.disabled = true;
-            methodField.value = 'PUT'; // Will be ignored because disabled, but safe
-        }
+        if(methodField) methodField.disabled = true;
         form.action = storeUrlBase;
         
         document.getElementById('nameInputWrapper').classList.remove('hidden');
@@ -451,25 +353,16 @@
         document.getElementById('nameInput').value = '';
 
         locNameDisplay.textContent = "BUAT LOKASI BARU";
-        locNameDisplay.className = "text-[#0052cc] bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 ml-1";
-
-        let lat = -6.175110;
-        let lng = 106.827153;
-        let radius = 50;
-
+        let lat = -6.175110, lng = 106.827153, radius = 50;
         latInput.value = lat.toFixed(8);
         lngInput.value = lng.toFixed(8);
-        radiusInput.value = radius;
-        radiusSlider.value = radius;
-
+        radiusInput.value = radius; radiusSlider.value = radius;
         updateMapFeatures(lat, lng, radius);
-        
-        setTimeout(() => { map.invalidateSize(); }, 400);
-        if(window.innerWidth < 1024) document.getElementById('map').scrollIntoView({behavior: 'smooth', block: 'center'});
+        setTimeout(() => map.invalidateSize(), 400);
     };
 
     window.deleteCurrentGeofence = function() {
-        if(confirm("AWAS! Apakah Anda yakin ingin menghapus lokasi Geofence ini secara permanen? \nData koordinat ini mungkin dibutuhkan karena sedang digunakan karyawan untuk absensi!")) {
+        if(confirm("Yakin ingin menghapus lokasi ini?")) {
             methodField.disabled = false;
             methodField.value = "DELETE";
             form.submit();

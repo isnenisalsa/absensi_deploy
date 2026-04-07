@@ -19,6 +19,7 @@ Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])-
 Route::get('/report/history-attendance', [\App\Http\Controllers\ReportController::class, 'historyAttendance'])->name('report.history');
 Route::get('/report/history-attendance/export', [\App\Http\Controllers\ReportController::class, 'exportExcel'])->name('report.history.export');
 Route::get('/report/ftw', [\App\Http\Controllers\ReportController::class, 'ftw'])->name('report.ftw');
+Route::get('/report/ftw/export', [\App\Http\Controllers\ReportController::class, 'exportFtw'])->name('report.ftw.export');
 
 // Geofence Management
 Route::get('/report/geofence', [\App\Http\Controllers\ReportController::class, 'geofence'])->name('report.geofence');
@@ -52,23 +53,23 @@ Route::prefix('master')->name('master.')->group(function () {
     Route::put('/divisions/{id}', [\App\Http\Controllers\MasterController::class, 'updateDivision'])->name('divisions.update');
     Route::delete('/divisions/{id}', [\App\Http\Controllers\MasterController::class, 'destroyDivision'])->name('divisions.destroy');
 
-    // Districts
-    Route::get('/districts', [\App\Http\Controllers\MasterController::class, 'districts'])->name('districts');
-    Route::post('/districts', [\App\Http\Controllers\MasterController::class, 'storeDistrict'])->name('districts.store');
-    Route::put('/districts/{id}', [\App\Http\Controllers\MasterController::class, 'updateDistrict'])->name('districts.update');
-    Route::delete('/districts/{id}', [\App\Http\Controllers\MasterController::class, 'destroyDistrict'])->name('districts.destroy');
-
     // Positions
     Route::get('/positions', [\App\Http\Controllers\MasterController::class, 'positions'])->name('positions');
     Route::post('/positions', [\App\Http\Controllers\MasterController::class, 'storePosition'])->name('positions.store');
     Route::put('/positions/{id}', [\App\Http\Controllers\MasterController::class, 'updatePosition'])->name('positions.update');
     Route::delete('/positions/{id}', [\App\Http\Controllers\MasterController::class, 'destroyPosition'])->name('positions.destroy');
 
+    // Lokasi Kerja (Work Location / Geofence)
+    Route::get('/locations', [\App\Http\Controllers\MasterController::class, 'locations'])->name('locations');
+    Route::post('/locations', [\App\Http\Controllers\MasterController::class, 'storeLocation'])->name('locations.store');
+    Route::put('/locations/{id}', [\App\Http\Controllers\MasterController::class, 'updateLocation'])->name('locations.update');
+    Route::delete('/locations/{id}', [\App\Http\Controllers\MasterController::class, 'destroyLocation'])->name('locations.destroy');
+
     // Mitra Kerja (Subcontractor)
-    Route::get('/mitra', [\App\Http\Controllers\MasterController::class, 'mitra'])->name('mitra');
-    Route::post('/mitra', [\App\Http\Controllers\MasterController::class, 'storeMitra'])->name('mitra.store');
-    Route::put('/mitra/{id}', [\App\Http\Controllers\MasterController::class, 'updateMitra'])->name('mitra.update');
-    Route::delete('/mitra/{id}', [\App\Http\Controllers\MasterController::class, 'destroyMitra'])->name('mitra.destroy');
+    Route::get('/mitra', [\App\Http\Controllers\MasterMitraController::class, 'index'])->name('mitra');
+    Route::post('/mitra', [\App\Http\Controllers\MasterMitraController::class, 'store'])->name('mitra.store');
+    Route::put('/mitra/{id}', [\App\Http\Controllers\MasterMitraController::class, 'update'])->name('mitra.update');
+    Route::delete('/mitra/{id}', [\App\Http\Controllers\MasterMitraController::class, 'destroy'])->name('mitra.destroy');
 
 });
 

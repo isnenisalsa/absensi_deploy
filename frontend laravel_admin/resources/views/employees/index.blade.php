@@ -154,25 +154,32 @@
             </div>
 
             <!-- Work Assignment Section -->
-            <div class="space-y-4 mb-8">
-
-                <!-- Mitra Row -->
-                <div class="flex flex-col p-4 bg-slate-50 border border-slate-200 rounded-xl relative z-10 transition-all hover:border-emerald-300 group">
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                             <i class="fa-solid fa-building text-emerald-500"></i> Perusahaan Subcontractor
-                        </label>
-                         <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                             Mitra Kerja
-                        </span>
-                    </div>
-                    <select id="mitraIdSelect" name="mitra_kerja_id" class="searchable-select w-full bg-white border border-slate-200 rounded-xl py-2.5 px-3 text-[12px] text-slate-800 font-bold outline-none focus:bg-white focus:border-emerald-500">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 relative z-10">
+                <div class="flex flex-col p-4 bg-slate-50 border border-slate-200 rounded-xl transition-all hover:border-emerald-300">
+                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                         <i class="fa-solid fa-map-location-dot text-emerald-500"></i> Lokasi Kerja
+                    </label>
+                    <select id="locationIdSelect" name="location_id" class="searchable-select w-full bg-white border border-slate-200 rounded-xl py-2.5 px-3 text-[12px] text-slate-800 font-bold outline-none focus:bg-white focus:border-emerald-500">
                         <option value="">- Pribadi / PAMA -</option>
-                        @foreach($mitras as $m)
-                        <option value="{{ $m['mitra_kerja_id'] }}">{{ $m['mitra_kerja_name'] }}</option>
+                        @foreach($locations as $m)
+                        <option value="{{ $m['location_id'] }}">{{ $m['location_name'] }}</option>
                         @endforeach
                     </select>
                 </div>
+
+                @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
+                <div class="flex flex-col p-4 bg-indigo-50 border border-indigo-100 rounded-xl transition-all hover:border-indigo-300">
+                    <label class="text-[10px] font-extrabold text-indigo-700 uppercase tracking-widest mb-3 flex items-center gap-2 font-black">
+                         <i class="fa-solid fa-handshake text-indigo-500"></i> Mitra Kerja (Subcon)
+                    </label>
+                    <select id="mitraIdSelect" name="mitra_id" class="searchable-select w-full bg-white border border-slate-200 rounded-xl py-2.5 px-3 text-[12px] text-slate-800 font-bold outline-none focus:bg-white focus:border-indigo-500">
+                        <option value="">- Internal PAMA -</option>
+                        @foreach($mitras as $m)
+                        <option value="{{ $m['mitra_id'] }}">{{ $m['mitra_name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
             </div>
 
 
@@ -233,6 +240,7 @@
     const isActiveSelect = document.getElementById('isActiveSelect');
     const posIdSelect = document.getElementById('posIdSelect');
     const divIdSelect = document.getElementById('divIdSelect');
+    const locationIdSelect = document.getElementById('locationIdSelect');
     const mitraIdSelect = document.getElementById('mitraIdSelect');
 
     const deleteForm = document.getElementById('deleteForm');
@@ -242,7 +250,7 @@
     const updateEmpUrlBase = "{{ url('employees') }}"; 
 
     function openCreateModal() {
-        empMethodField.value = 'POST';
+        if (empMethodField) empMethodField.value = 'POST';
         empForm.action = storeEmpUrl;
         
         // Reset Inputs
@@ -261,7 +269,8 @@
         
         posIdSelect.value = '';
         divIdSelect.value = '';
-        mitraIdSelect.value = '';
+        locationIdSelect.value = '';
+        if (mitraIdSelect) mitraIdSelect.value = '';
         
         modalTitle.innerText = "Daftarkan Karyawan Baru";
         btnSubmitEmp.innerHTML = `SIMPAN DATA KARYAWAN`;
@@ -275,7 +284,7 @@
 
     function editEmployee(emp) {
         empForm.action = `${updateEmpUrlBase}/${emp.nrp}`;
-        empMethodField.value = 'PUT';
+        if (empMethodField) empMethodField.value = 'PUT';
         
         // Fill Data
         nrpInput.value = emp.nrp;
@@ -301,7 +310,8 @@
 
         posIdSelect.value = emp.pos_id || '';
         divIdSelect.value = emp.div_id || '';
-        mitraIdSelect.value = emp.mitra_kerja_id || '';
+        locationIdSelect.value = emp.location_id || '';
+        if (mitraIdSelect) mitraIdSelect.value = emp.mitra_id || '';
         
         modalTitle.innerText = `Edit Karyawan: ${emp.full_name}`;
         btnSubmitEmp.innerHTML = `UPDATE DATA KARYAWAN`;
@@ -312,7 +322,7 @@
             initSearchableSelects();
         }, 100);
 
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 
 

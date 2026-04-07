@@ -13,7 +13,10 @@ interface Employee {
   div_id?: number;
   position?: { pos_name: string };
   division?: { div_name: string };
+  mitra?: { mitra_name: string };
   user?: { is_active: boolean; role: string };
+  mitra_id?: number | null;
+  location_id?: number | null;
 }
 
 interface EmployeesTableProps {
@@ -50,6 +53,17 @@ export function EmployeesTable({ data }: EmployeesTableProps) {
         <div className="flex flex-col">
           <Badge variant="outline" className="w-fit bg-slate-50 border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
             {emp.division?.div_name || "Tanpa Divisi"}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      header: "Mitra Kerja",
+      accessorKey: "mitra",
+      cell: (emp) => (
+        <div className="flex flex-col">
+          <Badge variant="secondary" className="w-fit bg-indigo-50 border-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5">
+            {emp.mitra?.mitra_name || "Internal PAMA"}
           </Badge>
         </div>
       ),

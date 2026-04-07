@@ -1,227 +1,224 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Perusahaan Subcontractor')
+@section('title', 'Master Mitra Kerja (Subcontractor)')
 
 @section('content')
 <div class="p-6 md:p-10 w-full max-w-[1400px] mx-auto animate-fade-in-up">
     
-    <!-- Premium Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-            <!-- Breadcrumb -->
-            <div class="text-[11px] font-medium text-slate-500 mb-3 flex items-center gap-2">
-                <span class="hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1.5">
-                    <i  class="fa-solid fa-database w-3.5 h-3.5" ></i> Data Master
-                </span>
-                <i  class="fa-solid fa-chevron-right w-3 h-3 text-slate-300" ></i>
-                <span class="text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-md text-[10px] tracking-wide shadow-sm">Perusahaan Subcont</span>
+    <!-- Header -->
+    <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-handshake text-[22px]"></i>
             </div>
-            <!-- Title -->
-            <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0052cc] to-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                    <i  class="fa-solid fa-building w-5 h-5" ></i>
-                </div>
-                <h1 class="text-2xl md:text-[28px] font-[900] text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight leading-none">Nama Perusahaan</h1>
+            <div>
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-[2px] mb-1">Master Data</div>
+                <h1 class="text-2xl md:text-[32px] font-black text-slate-800 tracking-tight leading-none">Mitra Kerja <span class="text-indigo-600">Subcontractor</span></h1>
             </div>
-            <p class="mt-3 text-slate-500 font-medium tracking-wide text-[13px] ml-1">Kelola data list nama Perusahaan Subcontractor atau Mitra Kerja.</p>
         </div>
-
-        <button type="button" onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
-            <i  class="fa-solid fa-plus w-4 h-4" ></i> TAMBAH MITRA
+        
+        <button onclick="openCreateModal()" class="group bg-slate-900 hover:bg-black text-white px-6 py-3.5 rounded-2xl font-bold text-[13px] transition-all flex items-center gap-3 shadow-xl shadow-slate-900/20 active:scale-95">
+            <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
+                <i class="fa-solid fa-plus text-[12px]"></i>
+            </div>
+            TAMBAH MITRA BARU
         </button>
     </div>
 
     <!-- Alert Success/Error -->
     @if(session('success'))
-        <div class="bg-emerald-50 text-emerald-700 p-4 rounded-xl mb-6 font-bold text-sm border border-emerald-200 animate-fade-in-up">
-            {{ session('success') }}
+        <div class="bg-emerald-50 text-emerald-700 p-5 rounded-2xl mb-8 font-bold text-sm border border-emerald-200 shadow-sm animate-fade-in-up flex items-center gap-4">
+            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <p>{{ session('success') }}</p>
         </div>
     @endif
     @if($errors->any())
-        <div class="bg-red-50 text-red-700 p-4 rounded-xl mb-6 font-bold text-sm border border-red-200 animate-fade-in-up">
-            {{ $errors->first() }}
+        <div class="bg-red-50 text-red-700 p-5 rounded-2xl mb-8 font-bold text-sm border border-red-200 shadow-sm animate-fade-in-up flex items-center gap-4">
+            <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </div>
+            <p>{{ $errors->first() }}</p>
         </div>
     @endif
 
-    <div class="flex flex-col gap-4">
-        <h3 class="font-extrabold text-slate-800 text-[15px] flex items-center gap-2">
-            <i  class="fa-solid fa-list w-5 h-5 text-blue-500" ></i> Daftar Mitra Subcontractor (<span id="totalMitra">{{ count($mitras) }}</span>)
-        </h3>
-        <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-100">
-                            <th class="py-4 px-5 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">ID</th>
-                            <th class="py-4 px-5 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Nama Perusahaan Subcontractor</th>
-                            <th class="py-4 px-5 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-center">Status Area Geofence</th>
-                            <th class="py-4 px-5 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($mitras as $mitra)
-                        <tr class="hover:bg-blue-50/30 transition-colors group">
-                            <td class="py-4 px-5">
-                                <span class="bg-slate-100 text-slate-600 font-extrabold text-xs px-2 py-1 rounded">#{{ str_pad($mitra['mitra_kerja_id'], 3, '0', STR_PAD_LEFT) }}</span>
-                            </td>
-                            <td class="py-4 px-5 text-[13px] font-bold text-slate-800">
-                                {{ $mitra['mitra_kerja_name'] }}
-                            </td>
-                            <td class="py-4 px-5 flex items-center justify-center">
-                                @if($mitra['latitude'] && $mitra['longitude'])
-                                    <span class="bg-emerald-50 border border-emerald-100 text-emerald-600 font-extrabold text-[10px] px-2.5 py-1 rounded-md flex items-center gap-1">
-                                        <i  class="fa-solid fa-map-pin w-3 h-3" ></i> Terpasang
-                                    </span>
-                                @else
-                                    <span class="bg-red-50 border border-red-100 text-red-600 font-extrabold text-[10px] px-2.5 py-1 rounded-md flex items-center gap-1">
-                                        <i  class="fa-solid fa-circle-xmark w-3 h-3" ></i> Kosong
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="py-4 px-5 text-right flex justify-end gap-2">
-                                <button type="button" onclick="editMitra({{ json_encode($mitra) }})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all mr-2">
-                                    <i  class="fa-solid fa-pen-to-square w-4 h-4" ></i>
+    <!-- Table Section -->
+    <div class="bg-white rounded-[32px] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50">
+                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">ID</th>
+                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Nama Mitra</th>
+                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Kontak PAMA</th>
+                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Total Karyawan</th>
+                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    @forelse($mitras as $m)
+                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                        <td class="px-8 py-6">
+                            <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">#{{ $m['mitra_id'] }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm">
+                                    {{ substr($m['mitra_name'], 0, 1) }}
+                                </div>
+                                <div class="font-extrabold text-slate-800 text-[15px]">{{ $m['mitra_name'] }}</div>
+                            </div>
+                        </td>
+                        <td class="px-8 py-6 text-[13px] font-bold text-slate-600">
+                            {{ $m['contact_pama'] ?? '-' }}
+                        </td>
+                        <td class="px-8 py-6 text-center">
+                            <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-black">
+                                <i class="fa-solid fa-users text-[10px]"></i>
+                                {{ $m['_count']['employees'] ?? 0 }}
+                            </div>
+                        </td>
+                        <td class="px-8 py-6 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick='openEditModal({{ json_encode($m) }})' class="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl transition-all shadow-sm">
+                                    <i class="fa-solid fa-pen-to-square text-[14px]"></i>
                                 </button>
-                                <button type="button" onclick="confirmDelete('{{ $mitra['mitra_kerja_id'] }}', '{{ $mitra['mitra_kerja_name'] }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all">
-                                    <i  class="fa-solid fa-trash-can w-4 h-4" ></i>
+                                <button onclick="openDeleteModal({{ $m['mitra_id'] }}, '{{ $m['mitra_name'] }}')" class="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-xl transition-all shadow-sm">
+                                    <i class="fa-solid fa-trash-can text-[14px]"></i>
                                 </button>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="py-10 text-center text-slate-400 font-bold text-xs">Belum ada data Perusahaan.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <div class="flex flex-col items-center gap-4">
+                                <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-200">
+                                    <i class="fa-solid fa-handshake-slash text-[32px]"></i>
+                                </div>
+                                <p class="text-slate-400 font-bold text-sm">Belum ada data Mitra Kerja.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- Modal Form -->
-<div id="modalContainer" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div id="modalOverlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="font-extrabold text-slate-800 text-[15px] flex items-center gap-2">
-                <i  id="modalIcon" class="fa-solid fa-circle-plus w-5 h-5 text-emerald-500" ></i>
-                <span id="modalTitle">Tambah Mitra Baru</span>
-            </h3>
-            <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <i  class="fa-solid fa-xmark w-5 h-5" ></i>
+<!-- Modal Create/Edit -->
+<div id="mitraModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="bg-white w-full max-w-md rounded-[32px] shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <h3 id="modalTitle" class="text-lg font-black text-slate-800 tracking-tight">Tambah Mitra Baru</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
-        
-        <form id="mitraForm" method="POST" action="{{ route('master.mitra.store') }}" class="p-6 bg-white relative overflow-hidden">
+        <form id="mitraForm" method="POST" action="{{ route('master.mitra.store') }}" class="p-8 space-y-6">
             @csrf
-            <input type="hidden" name="_method" value="POST" id="methodField">
+            <input type="hidden" name="_method" id="methodField" value="POST">
             
-            <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+            <div class="space-y-4">
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">NAMA MITRA KERJA</label>
+                    <input type="text" name="mitra_name" id="mitraNameInput" required placeholder="Contoh: PT. Maju Bersama" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-5 text-[13px] font-bold outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all transition-all"/>
+                </div>
 
-            <div class="flex flex-col mb-6 relative z-10">
-                <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Perusahaan</label>
-                <input type="text" id="mitraNameInput" name="mitra_kerja_name" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" required placeholder="Silahkan isi Nama Mitra Kerja"/>
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">KONTAK PAMA (OPSIONAL)</label>
+                    <input type="text" name="contact_pama" id="contactPamaInput" placeholder="Nama pengawas/PIC PAMA" class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-5 text-[13px] font-bold outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all transition-all"/>
+                </div>
 
+                <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4">
+                    <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-circle-info text-sm"></i>
+                    </div>
+                    <p class="text-[11px] font-bold text-amber-800 leading-relaxed">
+                        Sistem akan otomatis membuat akun Admin untuk Mitra ini. Mohon catat password yang muncul di notifikasi setelah berhasil disimpan.
+                    </p>
+                </div>
             </div>
 
-            <div class="flex flex-col gap-3">
-                <button type="submit" id="btnSubmit" class="w-full px-6 py-3.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <i  class="fa-solid fa-save w-4 h-4" ></i> SIMPAN PERUSAHAAN
-                </button>
-            </div>
-            
-            <p class="text-[10px] text-slate-400 font-medium text-center mt-5">Geofence (Radius & Lokasi) diatur di menu Geofence Lokasi.</p>
+            <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-black text-white font-black text-[13px] rounded-2xl shadow-xl shadow-indigo-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-3">
+                SIMPAN DATA MITRA
+            </button>
         </form>
     </div>
 </div>
 
-<!-- Modal Delete Confirmation -->
-<div id="deleteModalContainer" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
+<!-- Modal Delete -->
+<div id="deleteModal" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4 p-8 flex flex-col items-center text-center">
-        <div class="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-6">
-            <i  class="fa-solid fa-triangle-exclamation w-8 h-8" ></i>
+    <div class="bg-white w-full max-w-sm rounded-[32px] shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4 p-8 flex flex-col items-center text-center">
+        <div class="w-20 h-20 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-6">
+            <i class="fa-solid fa-triangle-exclamation text-[32px]"></i>
         </div>
-        <h3 class="text-xl font-[900] text-slate-800 mb-2">Hapus Perusahaan?</h3>
-        <p class="text-slate-500 text-sm font-medium mb-8 leading-relaxed">
-            Hapus master <span id="delMitraName" class="text-blue-600 font-extrabold"></span> secara permanen? Seluruh data Geofence terkait akan ikut hilang.
+        <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight">Hapus Mitra Kerja?</h3>
+        <p class="text-slate-500 text-[13px] font-bold mb-8 leading-relaxed">
+            Anda akan menghapus mitra <span id="delMitraName" class="text-indigo-600 uppercase font-black"></span>. Tindakan ini tidak dapat dibatalkan.
         </p>
         <div class="flex w-full gap-3">
-            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-xs rounded-xl transition-all uppercase tracking-widest">
+            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-xs rounded-2xl transition-all uppercase tracking-widest">
                 BATAL
             </button>
             <form id="deleteForm" method="POST" action="" class="flex-1">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-red-500/20 uppercase tracking-widest">
+                <button type="submit" class="w-full px-4 py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-2xl transition-all shadow-lg shadow-red-500/20 uppercase tracking-widest">
                     YA, HAPUS
                 </button>
             </form>
         </div>
     </div>
 </div>
-@endsection
 
-@push('scripts')
 <script>
-    const modalContainer = document.getElementById('modalContainer');
-    const deleteModalContainer = document.getElementById('deleteModalContainer');
-    const form = document.getElementById('mitraForm');
+    const mitraModal = document.getElementById('mitraModal');
+    const deleteModal = document.getElementById('deleteModal');
+    const mitraForm = document.getElementById('mitraForm');
     const methodField = document.getElementById('methodField');
-    const mitraNameInput = document.getElementById('mitraNameInput');
     const modalTitle = document.getElementById('modalTitle');
-    const btnSubmit = document.getElementById('btnSubmit');
-    const delMitraName = document.getElementById('delMitraName');
+    const mitraNameInput = document.getElementById('mitraNameInput');
+    const contactPamaInput = document.getElementById('contactPamaInput');
     const deleteForm = document.getElementById('deleteForm');
-    
-    const storeUrl = "{{ route('master.mitra.store') }}";
-    const updateUrlBase = "{{ url('master/mitra') }}"; 
+    const delMitraName = document.getElementById('delMitraName');
+
+    const baseUpdateUrl = "{{ url('master/mitra') }}";
 
     function openCreateModal() {
-        methodField.value = 'POST';
-        form.action = storeUrl;
-        mitraNameInput.value = '';
-        
         modalTitle.innerText = "Tambah Mitra Baru";
-        btnSubmit.innerHTML = `<i  class="fa-solid fa-save w-4 h-4" ></i> SIMPAN PERUSAHAAN`;
-        modalContainer.classList.remove('hidden');
-        lucide.createIcons();
+        mitraForm.action = "{{ route('master.mitra.store') }}";
+        methodField.value = "POST";
+        mitraNameInput.value = "";
+        contactPamaInput.value = "";
+        mitraModal.classList.remove('hidden');
     }
 
-    function editMitra(mitra) {
-        form.action = `${updateUrlBase}/${mitra.mitra_kerja_id}`;
-        methodField.value = 'PUT';
-        
-        mitraNameInput.value = mitra.mitra_kerja_name;
-        
-        modalTitle.innerText = `Edit: #${mitra.mitra_kerja_name}`;
-        btnSubmit.innerHTML = `<i  class="fa-solid fa-save w-4 h-4" ></i> PERBARUI NAMA`;
-        modalContainer.classList.remove('hidden');
-        lucide.createIcons();
+    function openEditModal(mitra) {
+        modalTitle.innerText = "Edit Mitra Kerja";
+        mitraForm.action = `${baseUpdateUrl}/${mitra.mitra_id}`;
+        methodField.value = "PUT";
+        mitraNameInput.value = mitra.mitra_name;
+        contactPamaInput.value = mitra.contact_pama || "";
+        mitraModal.classList.remove('hidden');
     }
 
     function closeModal() {
-        modalContainer.classList.add('hidden');
+        mitraModal.classList.add('hidden');
     }
 
-    function confirmDelete(id, name) {
-        deleteForm.action = `${updateUrlBase}/${id}`;
+    function openDeleteModal(id, name) {
+        deleteForm.action = `${baseUpdateUrl}/${id}`;
         delMitraName.innerText = name;
-        deleteModalContainer.classList.remove('hidden');
-        lucide.createIcons();
+        deleteModal.classList.remove('hidden');
     }
 
     function closeDeleteModal() {
-        deleteModalContainer.classList.add('hidden');
+        deleteModal.classList.add('hidden');
     }
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeModal();
-            closeDeleteModal();
-        }
-    });
-
 </script>
-@endpush
+@endsection

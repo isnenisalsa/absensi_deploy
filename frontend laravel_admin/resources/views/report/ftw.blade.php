@@ -48,11 +48,14 @@
                     <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">TANGGAL MONITORING</label>
                     <input type="date" name="filter_date" value="{{ $filterDate }}" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all"/>
                 </div>
-                <div class="flex gap-3">
-                    <button type="submit" class="flex-1 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit" class="flex-1 md:flex-none px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
                         <i class="fa-solid fa-magnifying-glass"></i> TAMPILKAN
                     </button>
-                    <a href="{{ route('report.ftw') }}" class="px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-[12px] rounded-xl transition-all uppercase tracking-widest">
+                    <a href="{{ route('report.ftw.export', ['filter_date' => $filterDate]) }}" class="flex-1 md:flex-none px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-emerald-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i> EXPORT EXCEL
+                    </a>
+                    <a href="{{ route('report.ftw') }}" class="flex-1 md:flex-none px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-[12px] rounded-xl transition-all uppercase tracking-widest text-center">
                         RESET
                     </a>
                 </div>

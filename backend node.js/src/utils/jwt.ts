@@ -5,6 +5,7 @@ const SECRET_KEY = process.env.JWT_SECRET || 'super_secret_absensi_key_123';
 export interface TokenPayload {
   nrp: string;
   role: string;
+  mitra_id?: number | null;
 }
 
 export const generateToken = (payload: TokenPayload): string => {

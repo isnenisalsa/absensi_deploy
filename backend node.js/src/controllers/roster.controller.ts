@@ -10,6 +10,11 @@ export const getRosters = async (req: Request, res: Response) => {
       where.nrp = String(nrp);
     }
 
+    const mitraId = req.user?.mitra_id;
+    if (mitraId) {
+      where.employee = { mitra_id: mitraId };
+    }
+
     if (month && year) {
       const startDate = new Date(Number(year), Number(month) - 1, 1);
       const endDate = new Date(Number(year), Number(month), 0);
@@ -42,6 +47,14 @@ export const createRoster = async (req: Request, res: Response) => {
 
     if (!nrp || !date) {
       return res.status(400).json({ error: 'NRP dan Tanggal wajib diisi' });
+    }
+
+    const mitraId = req.user?.mitra_id;
+    if (mitraId) {
+        const targetEmp = await prisma.employees.findUnique({ where: { nrp } });
+        if (!targetEmp || targetEmp.mitra_id !== mitraId) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses ke karyawan ini' });
+        }
     }
 
     const roster = await prisma.rosters.upsert({

@@ -13,6 +13,7 @@ import masterRoutes from './routes/master.routes';
 import employeeRoutes from './routes/employee.routes';
 import rosterRoutes from './routes/roster.routes';
 import userRoutes from './routes/user.routes';
+import mitraRoutes from './routes/mitra.routes';
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/master', masterRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/rosters', rosterRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/master/mitras', mitraRoutes);
 
 // Penanganan Route NotFound
 app.use((req, res, next) => {

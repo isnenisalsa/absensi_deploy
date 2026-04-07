@@ -16,7 +16,6 @@ interface Attendance {
     full_name: string;
     position?: { pos_name: string };
     division?: { div_name: string; department?: { dept_name: string } };
-    district?: { dist_name: string };
   };
 }
 

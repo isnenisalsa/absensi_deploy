@@ -32,71 +32,72 @@ export const getPositions = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-// --- GEOFENCE LOCATION DATA (MITRA KERJA) ---
-export const getMitraKerja = async (req: Request, res: Response): Promise<void> => {
+// --- GEOFENCE LOCATION DATA (LOKASI KERJA) ---
+export const getLocations = async (req: Request, res: Response): Promise<void> => {
   try {
-    const mitraList = await prisma.mitra_kerja.findMany();
-    res.json(mitraList);
+    const locationList = await prisma.locations.findMany();
+    res.json(locationList);
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching mitra kerja' });
+    res.status(500).json({ error: 'Error fetching locations' });
   }
 };
 
-export const createMitraKerja = async (req: Request, res: Response): Promise<void> => {
+export const createLocation = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { mitra_kerja_name, latitude, longitude, radius_meters } = req.body;
+    const { location_name, latitude, longitude, radius_meters } = req.body;
     
     // Validasi Sederhana
-    if (!mitra_kerja_name) {
-      res.status(400).json({ error: 'Nama Mitra Kerja wajib diisi' });
+    if (!location_name) {
+      res.status(400).json({ error: 'Nama Lokasi Kerja wajib diisi' });
       return;
     }
 
-    const created = await prisma.mitra_kerja.create({
+    const created = await prisma.locations.create({
       data: {
-        mitra_kerja_name,
+        location_name,
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
         radius_meters: radius_meters ? Number(radius_meters) : 50
       }
     });
 
-    res.json({ message: 'Mitra kerja baru berhasil ditambahkan', data: created });
+    res.json({ message: 'Lokasi kerja baru berhasil ditambahkan', data: created });
   } catch (err) {
-    res.status(500).json({ error: 'Gagal menambah mitra kerja' });
+    res.status(500).json({ error: 'Gagal menambah lokasi kerja' });
   }
 };
 
-export const updateMitraKerja = async (req: Request, res: Response): Promise<void> => {
+export const updateLocation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { latitude, longitude, radius_meters } = req.body;
+    const { location_name, latitude, longitude, radius_meters } = req.body;
     
-    const updated = await prisma.mitra_kerja.update({
-      where: { mitra_kerja_id: Number(id) },
+    const updated = await prisma.locations.update({
+      where: { location_id: Number(id) },
       data: {
+        ...(location_name && { location_name }),
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
         radius_meters: radius_meters ? Number(radius_meters) : 50
       }
     });
     
-    res.json({ message: 'Geofence location updated successfully', data: updated });
+    res.json({ message: 'Location updated successfully', data: updated });
   } catch (err) {
-    res.status(500).json({ error: 'Error updating mitra kerja' });
+    res.status(500).json({ error: 'Error updating location' });
   }
 };
 
-export const deleteMitraKerja = async (req: Request, res: Response): Promise<void> => {
+export const deleteLocation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    await prisma.mitra_kerja.delete({
-      where: { mitra_kerja_id: Number(id) }
+    await prisma.locations.delete({
+      where: { location_id: Number(id) }
     });
     
-    res.json({ message: 'Geofence location deleted successfully' });
+    res.json({ message: 'Location deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Error deleting mitra kerja' });
+    res.status(500).json({ error: 'Error deleting location' });
   }
 };
 
@@ -259,40 +260,3 @@ export const deletePosition = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// --- DISTRICTS ---
-export const getDistricts = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const districts = await prisma.districts.findMany();
-    res.json(districts);
-  } catch (err) {
-    res.status(500).json({ error: 'Error fetching districts', details: String(err) });
-  }
-};
-export const createDistrict = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { dist_name } = req.body;
-    const created = await prisma.districts.create({ data: { dist_name } });
-    res.json({ message: 'District created', data: created });
-  } catch (err) {
-    res.status(500).json({ error: 'Error creating district', details: String(err) });
-  }
-};
-export const updateDistrict = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const { dist_name } = req.body;
-    const updated = await prisma.districts.update({ where: { dist_id: Number(id) }, data: { dist_name } });
-    res.json({ message: 'District updated', data: updated });
-  } catch (err) {
-    res.status(500).json({ error: 'Error updating district', details: String(err) });
-  }
-};
-export const deleteDistrict = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    await prisma.districts.delete({ where: { dist_id: Number(id) } });
-    res.json({ message: 'District deleted' });
-  } catch (err) {
-    res.status(500).json({ error: 'Error deleting district', details: String(err) });
-  }
-};

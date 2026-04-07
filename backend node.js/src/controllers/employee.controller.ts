@@ -4,13 +4,17 @@ import bcrypt from 'bcrypt';
 
 export const getEmployees = async (req: Request, res: Response): Promise<void> => {
   try {
+    const mitraId = req.user?.mitra_id;
     const employees = await prisma.employees.findMany({
+      where: {
+        ...(mitraId && { mitra_id: mitraId })
+      },
       include: {
         user: { select: { role: true, is_active: true } },
         position: true,
         division: { include: { department: true } },
-        mitra_kerja: true,
-        district: true
+        location: true,
+        mitra: true
       }
     });
     res.json(employees);
@@ -28,10 +32,14 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       role, 
       pos_id, 
       div_id, 
-      mitra_kerja_id, 
-      dist_id, 
+      location_id, 
+      mitra_id,
       default_work_location 
     } = req.body;
+
+    const userMitraId = req.user?.mitra_id;
+    // If user is a Mitra Admin, they can ONLY create employees for their own mitra
+    const finalMitraId = userMitraId ? userMitraId : (mitra_id ? Number(mitra_id) : null);
 
     if (!nrp || !full_name || !password) {
       res.status(400).json({ error: 'NRP, Full Name, and Password are required' });
@@ -48,13 +56,14 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
     const password_hash = await bcrypt.hash(password, salt);
 
     // Gunakan Prisma transaction untuk memastikan User dan Employee sukses keduannya
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const user = await tx.users.create({
         data: {
           nrp,
           password_hash,
           role: role || 'employee',
-          is_active: true
+          is_active: true,
+          mitra_id: finalMitraId
         }
       });
 
@@ -64,8 +73,8 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
           full_name,
           pos_id: pos_id ? Number(pos_id) : null,
           div_id: div_id ? Number(div_id) : null,
-          mitra_kerja_id: mitra_kerja_id ? Number(mitra_kerja_id) : null,
-          dist_id: dist_id ? Number(dist_id) : null,
+          location_id: location_id ? Number(location_id) : null,
+          mitra_id: finalMitraId,
           default_work_location: default_work_location || 'WFO'
         }
       });
@@ -87,14 +96,25 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
       role, 
       pos_id, 
       div_id, 
-      mitra_kerja_id, 
-      dist_id, 
+      location_id, 
+      mitra_id,
       default_work_location,
       password,
       is_active
     } = req.body;
 
-    const result = await prisma.$transaction(async (tx) => {
+    const userMitraId = req.user?.mitra_id;
+
+    // Verify ownership if not super admin
+    if (userMitraId) {
+       const targetEmp = await prisma.employees.findUnique({ where: { nrp: id } });
+       if (!targetEmp || targetEmp.mitra_id !== userMitraId) {
+         res.status(403).json({ error: 'Anda tidak memiliki akses ke karyawan ini' });
+         return;
+       }
+    }
+
+    const result = await prisma.$transaction(async (tx: any) => {
       let updateDataUser: any = {};
       if (role) updateDataUser.role = String(role);
       if (is_active !== undefined) updateDataUser.is_active = is_active;
@@ -116,8 +136,8 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
           ...(full_name && { full_name: String(full_name) }),
           ...(pos_id !== undefined && { pos_id: pos_id ? Number(pos_id) : null }),
           ...(div_id !== undefined && { div_id: div_id ? Number(div_id) : null }),
-          ...(mitra_kerja_id !== undefined && { mitra_kerja_id: mitra_kerja_id ? Number(mitra_kerja_id) : null }),
-          ...(dist_id !== undefined && { dist_id: dist_id ? Number(dist_id) : null }),
+          ...(location_id !== undefined && { location_id: location_id ? Number(location_id) : null }),
+          ...(mitra_id !== undefined && !userMitraId && { mitra_id: mitra_id ? Number(mitra_id) : null }), // Only super can change mitra
           ...(default_work_location !== undefined && { default_work_location: String(default_work_location) })
         }
       });
@@ -134,7 +154,17 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
 export const deleteEmployee = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    
+    const userMitraId = req.user?.mitra_id;
+
+    // Verify ownership if not super admin
+    if (userMitraId) {
+       const targetEmp = await prisma.employees.findUnique({ where: { nrp: id } });
+       if (!targetEmp || targetEmp.mitra_id !== userMitraId) {
+         res.status(403).json({ error: 'Anda tidak memiliki akses ke karyawan ini' });
+         return;
+       }
+    }
+
     // Check constraints: attendances
     const atts = await prisma.attendances.count({ where: { nrp: id } });
     if (atts > 0) {
@@ -142,7 +172,7 @@ export const deleteEmployee = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.employees.delete({ where: { nrp: id } });
       await tx.users.delete({ where: { nrp: id } });
     });

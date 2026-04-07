@@ -4,8 +4,7 @@ import {
   getDepartments, createDepartment, updateDepartment, deleteDepartment,
   getDivisions, createDivision, updateDivision, deleteDivision,
   getPositions, createPosition, updatePosition, deletePosition,
-  getMitraKerja, updateMitraKerja, createMitraKerja, deleteMitraKerja,
-  getDistricts, createDistrict, updateDistrict, deleteDistrict
+  getLocations, updateLocation, createLocation, deleteLocation
 } from '../controllers/master.controller';
 
 const router = Router();
@@ -34,16 +33,11 @@ router.post('/positions', createPosition);
 router.put('/positions/:id', updatePosition);
 router.delete('/positions/:id', deletePosition);
 
-// Geofence Endpoints
-router.get('/mitra-kerja', getMitraKerja);
-router.post('/mitra-kerja', createMitraKerja);
-router.put('/mitra-kerja/:id', updateMitraKerja);
-router.delete('/mitra-kerja/:id', deleteMitraKerja);
+// Geofence / Work Location Endpoints
+router.get('/locations', getLocations);
+router.post('/locations', createLocation);
+router.put('/locations/:id', updateLocation);
+router.delete('/locations/:id', deleteLocation);
 
-// Districts
-router.get('/districts', getDistricts);
-router.post('/districts', createDistrict);
-router.put('/districts/:id', updateDistrict);
-router.delete('/districts/:id', deleteDistrict);
 
 export default router;

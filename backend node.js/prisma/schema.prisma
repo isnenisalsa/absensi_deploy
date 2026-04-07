@@ -8,20 +8,48 @@ datasource db {
 }
 
 model users {
-  nrp           String     @id @db.VarChar(255)
-  password_hash String     @db.VarChar(255)
+  nrp           String          @id @db.VarChar(255)
+  password_hash String          @db.VarChar(255)
   role          user_roles
-  is_active     Boolean    @default(true)
+  is_active     Boolean         @default(true)
+  mitra_id      Int?
   employee      employees?
+  sessions      user_sessions[]
+  mitra         mitras?         @relation(fields: [mitra_id], references: [mitra_id])
+
+  @@index([mitra_id], map: "users_mitra_id_fkey")
 }
 
-model mitra_kerja {
-  mitra_kerja_id   Int         @id @default(autoincrement())
-  mitra_kerja_name String      @db.VarChar(255)
-  latitude         Decimal?    @db.Decimal(10, 8)
-  longitude        Decimal?    @db.Decimal(11, 8)
-  radius_meters    Int         @default(50)
-  employees        employees[]
+model user_sessions {
+  session_id String   @id @default(uuid())
+  nrp        String   @db.VarChar(255)
+  token      String   @db.Text
+  ip_address String?  @db.VarChar(45)
+  user_agent String?  @db.Text
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  expires_at DateTime
+  user       users    @relation(fields: [nrp], references: [nrp])
+
+  @@index([nrp])
+}
+
+model mitras {
+  mitra_id     Int         @id @default(autoincrement())
+  mitra_name   String      @db.VarChar(255)
+  contact_pama String?     @db.VarChar(255)
+  created_at   DateTime    @default(now())
+  employees    employees[]
+  users        users[]
+}
+
+model locations {
+  location_id   Int         @id @default(autoincrement())
+  location_name String      @db.VarChar(255)
+  latitude      Decimal?    @db.Decimal(10, 8)
+  longitude     Decimal?    @db.Decimal(11, 8)
+  radius_meters Int         @default(50)
+  employees     employees[]
 }
 
 model departments {
@@ -46,33 +74,27 @@ model positions {
   employees employees[]
 }
 
-model districts {
-  dist_id   Int         @id @default(autoincrement())
-  dist_name String      @db.VarChar(255)
-  employees employees[]
-}
-
 model employees {
   nrp                   String        @id @db.VarChar(255)
   full_name             String        @db.VarChar(255)
   pos_id                Int?
   div_id                Int?
-  mitra_kerja_id        Int?
+  location_id           Int?
   default_work_location String?       @db.VarChar(255)
-  dist_id               Int?
+  mitra_id              Int?
   attendances           attendances[]
-  district              districts?    @relation(fields: [dist_id], references: [dist_id])
   division              divisions?    @relation(fields: [div_id], references: [div_id])
-  mitra_kerja           mitra_kerja?  @relation(fields: [mitra_kerja_id], references: [mitra_kerja_id])
+  location              locations?    @relation(fields: [location_id], references: [location_id])
+  mitra                 mitras?       @relation(fields: [mitra_id], references: [mitra_id])
   user                  users         @relation(fields: [nrp], references: [nrp])
   position              positions?    @relation(fields: [pos_id], references: [pos_id])
   ftw_reports           ftw_reports[]
   rosters               rosters[]
 
-  @@index([dist_id], map: "employees_dist_id_fkey")
   @@index([div_id], map: "employees_div_id_fkey")
-  @@index([mitra_kerja_id], map: "employees_mitra_kerja_id_fkey")
+  @@index([location_id], map: "employees_location_id_fkey")
   @@index([pos_id], map: "employees_pos_id_fkey")
+  @@index([mitra_id], map: "employees_mitra_id_fkey")
 }
 
 model shifts {
@@ -90,8 +112,6 @@ model attendances {
   att_id          String      @id @default(uuid())
   nrp             String      @db.VarChar(255)
   attendance_date DateTime    @db.Date
-  date_in         DateTime?   @db.Date
-  date_out        DateTime?   @db.Date
   time_wita       DateTime    @db.Time(0)
   time_wib        DateTime    @db.Time(0)
   shift_id        Int
@@ -103,6 +123,8 @@ model attendances {
   att_map_link    String?     @db.Text
   photo_evidence  String?     @db.VarChar(255)
   device_ip       String?     @db.VarChar(45)
+  date_in         DateTime?   @db.Date
+  date_out        DateTime?   @db.Date
   employee        employees   @relation(fields: [nrp], references: [nrp])
   shift           shifts      @relation(fields: [shift_id], references: [shift_id])
 
@@ -114,10 +136,10 @@ model rosters {
   id            Int       @id @default(autoincrement())
   nrp           String    @db.VarChar(255)
   date          DateTime  @db.Date
-  date_in       DateTime? @db.Date
-  date_out      DateTime? @db.Date
   shift_id      Int?
   work_location String?   @db.VarChar(255)
+  date_in       DateTime? @db.Date
+  date_out      DateTime? @db.Date
   employee      employees @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
   shift         shifts?   @relation(fields: [shift_id], references: [shift_id])
 

@@ -17,13 +17,13 @@ export const checkIn = async (req: Request, res: Response): Promise<void> => {
     // Melacak koordinat kantor dari Employee's Mitra Kerja
     const employeeData = await prisma.employees.findUnique({
       where: { nrp },
-      include: { mitra_kerja: true }
+      include: { location: true }
     });
 
-    if (employeeData?.mitra_kerja?.latitude && employeeData?.mitra_kerja?.longitude) {
-      const officeLat = Number(employeeData.mitra_kerja.latitude);
-      const officeLon = Number(employeeData.mitra_kerja.longitude);
-      const radiusLimit = employeeData.mitra_kerja.radius_meters || 50;
+    if (employeeData?.location?.latitude && employeeData?.location?.longitude) {
+      const officeLat = Number(employeeData.location.latitude);
+      const officeLon = Number(employeeData.location.longitude);
+      const radiusLimit = employeeData.location.radius_meters || 50;
 
       const distance = calculateDistance(lat, long, officeLat, officeLon);
       
@@ -144,7 +144,8 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
   export const getMyAttendance = async (req: Request, res: Response): Promise<void> => {
     try {
         const nrp = req.user!.nrp;
-        const role = req.user!.role; // Assuming token includes role
+        const role = req.user!.role;
+        const mitraId = req.user?.mitra_id;
         
         let whereClause: any = {};
         
@@ -152,7 +153,10 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
             whereClause.nrp = nrp;
         } else {
             // Admin Filter Logic
-            const { start_date, end_date, divisi, dept, perusahaan, distrik } = req.query;
+            if (mitraId) {
+                whereClause.employee = { mitra_id: mitraId };
+            }
+            const { start_date, end_date, divisi, dept, lokasi } = req.query;
 
             if (start_date || end_date) {
                 whereClause.attendance_date = {};
@@ -169,11 +173,8 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
                     division: { dept_id: Number(dept) } 
                 };
             }
-            if (perusahaan && perusahaan !== 'ALL') {
-                whereClause.employee = { ...whereClause.employee, mitra_kerja_id: Number(perusahaan) };
-            }
-            if (distrik && distrik !== 'ALL') {
-                whereClause.employee = { ...whereClause.employee, dist_id: Number(distrik) };
+            if (lokasi && lokasi !== 'ALL') {
+                whereClause.employee = { ...whereClause.employee, location_id: Number(lokasi) };
             }
         }
 
@@ -184,12 +185,11 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
                 shift: true,
                 employee: {
                     include: {
-                        mitra_kerja: true,
+                        location: true,
                         position: true,
                         division: {
                             include: { department: true }
                         },
-                        district: true
                     }
                 }
             }
@@ -216,6 +216,11 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
                 gte: startDate,
                 lte: endDate
             };
+        }
+
+        const mitraId = req.user?.mitra_id;
+        if (mitraId) {
+            whereClause.employee = { mitra_id: mitraId };
         }
 
         const records = await prisma.ftw_reports.findMany({
