@@ -1,0 +1,135 @@
+// Use dbdiagram.io to visualize this schema
+// Updated: Renamed Mitra Kerja to Locations (Lokasi Kerja)
+
+Table users {
+  nrp           varchar [pk]
+  password_hash varchar
+  role          user_roles
+  is_active     boolean [default: true]
+}
+
+Table user_sessions {
+  session_id uuid [pk]
+  nrp        varchar
+  token      text
+  ip_address varchar
+  user_agent text
+  is_active  boolean [default: true]
+  created_at datetime [default: `now()`]
+  expires_at datetime
+}
+
+Table locations {
+  location_id   int [pk, increment]
+  location_name varchar
+  latitude      decimal
+  longitude     decimal
+  radius_meters int [default: 50]
+}
+
+Table departments {
+  dept_id   int [pk, increment]
+  dept_name varchar
+}
+
+Table divisions {
+  div_id     int [pk, increment]
+  div_name   varchar
+  dept_id    int
+}
+
+Table positions {
+  pos_id    int [pk, increment]
+  pos_name  varchar
+}
+
+Table employees {
+  nrp                   varchar [pk]
+  full_name             varchar
+  pos_id                int
+  div_id                int
+  location_id           int
+  default_work_location varchar
+}
+
+Table shifts {
+  shift_id          int [pk, increment]
+  shift_code        varchar
+  time_in_expected  time
+  time_out_expected time
+  date_in           date
+  date_out          date
+}
+
+Table attendances {
+  att_id          uuid [pk]
+  nrp             String
+  attendance_date date
+  date_in         date
+  date_out        date
+  time_wita       time
+  time_wib        time
+  shift_id        int
+  trans_type      trans_types
+  cp_location     varchar
+  work_location   varchar
+  att_latitude    decimal
+  att_longitude   decimal
+  att_map_link    text
+  photo_evidence  varchar
+  device_ip       varchar
+}
+
+Table rosters {
+  id            int [pk, increment]
+  nrp           varchar
+  date          date
+  date_in       date
+  date_out      date
+  shift_id      int
+  work_location varchar
+}
+
+Table ftw_reports {
+  id                int [pk, increment]
+  nrp               varchar
+  ftw_date          date
+  kehadiran_onsite  boolean [default: true]
+  unit_dioperasikan varchar
+  pola_shift        varchar
+  shift             varchar
+  jam_tidur_12_jam  varchar
+  jam_tidur_36_jam  varchar
+  jam_bangun        varchar
+  konsumsi_obat     boolean
+  punya_masalah     boolean
+  gejala_kesehatan  boolean
+  status_ftw        varchar
+  created_at        datetime [default: `now()`]
+}
+
+Enum user_roles {
+  admin
+  safety
+  csr
+  employee
+}
+
+Enum trans_types {
+  Check_in
+  Check_out
+  Izin
+  Sakit
+}
+
+Ref: user_sessions.nrp > users.nrp
+Ref: divisions.dept_id > departments.dept_id
+Ref: employees.nrp - users.nrp
+Ref: employees.pos_id > positions.pos_id
+Ref: employees.div_id > divisions.div_id
+Ref: employees.location_id > locations.location_id
+Ref: attendances.nrp > employees.nrp
+Ref: attendances.shift_id > shifts.shift_id
+Ref: rosters.nrp > employees.nrp
+Ref: rosters.shift_id > shifts.shift_id
+Ref: ftw_reports.nrp > employees.nrp
