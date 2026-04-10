@@ -41,7 +41,15 @@ export function HistoryTable({ data }: HistoryTableProps) {
       className: "min-w-[150px]",
       cell: (att) => {
         if (!att.time_wita) return "-";
-        const timeVal = att.time_wita.includes(':') ? att.time_wita.substring(0, 8) : new Date(att.time_wita).toLocaleTimeString('en-GB');
+        // Robust extraction from ISO (T) or standard date-time string (space)
+        let timeVal = "-";
+        if (att.time_wita.includes('T')) {
+          timeVal = att.time_wita.split('T')[1].substring(0, 8);
+        } else if (att.time_wita.includes(' ')) {
+          timeVal = att.time_wita.split(' ')[1].substring(0, 8);
+        } else {
+          timeVal = att.time_wita.substring(0, 8);
+        }
         return (
           <span className="text-[12px] font-black text-slate-400">
             {timeVal}

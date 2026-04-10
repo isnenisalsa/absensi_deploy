@@ -12,10 +12,12 @@ export const validate = (schema: ZodSchema) =>
       next();
     } catch (error: any) {
       if (error instanceof ZodError) {
-        const errObj = error as any;
         res.status(400).json({
           error: 'Format input tidak valid.',
-          details: errObj.errors.map((e: any) => ({ path: e.path.join('.'), message: e.message }))
+          details: error.issues.map((e: any) => ({ 
+            path: e.path.join('.'), 
+            message: e.message 
+          }))
         });
         return;
       }

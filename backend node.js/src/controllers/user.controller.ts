@@ -4,7 +4,11 @@ import bcrypt from 'bcrypt';
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    const mitraId = req.user?.mitra_id;
     const users = await prisma.users.findMany({
+      where: {
+        ...(mitraId && { mitra_id: mitraId })
+      },
       include: {
         employee: {
           select: {
@@ -25,9 +29,24 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   try {
     const nrp = req.params.nrp as string;
     const { role, is_active, password } = req.body;
+    const mitraId = req.user?.mitra_id;
+
+    // Ownership check
+    if (mitraId) {
+        const targetUser = await prisma.users.findUnique({ where: { nrp } });
+        if (!targetUser || targetUser.mitra_id !== mitraId) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses ke user ini' });
+        }
+    }
 
     const updateData: any = {};
-    if (role) updateData.role = role;
+    if (role) {
+        // Admin Mitra cannot change roles
+        if (mitraId) {
+            return res.status(403).json({ error: 'Admin Mitra tidak diizinkan mengubah role akses' });
+        }
+        updateData.role = role;
+    }
     if (is_active !== undefined) updateData.is_active = is_active;
     if (password) {
       const salt = await bcrypt.genSalt(10);

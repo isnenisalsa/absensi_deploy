@@ -3,7 +3,7 @@ import { ModernDataTable, ColumnDef } from "../ModernDataTable";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
-import { Edit, ShieldAlert, CheckCircle2, XCircle } from "lucide-react";
+import { Edit, ShieldAlert, CheckCircle2, XCircle, Trash2, ShieldCheck, ShieldX } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface User {
@@ -18,14 +18,18 @@ interface User {
 
 interface UsersTableProps {
   data: User[];
+  userRole?: string;
+  mitraId?: number | null;
 }
 
-export function UsersTable({ data }: UsersTableProps) {
+export function UsersTable({ data, userRole, mitraId }: UsersTableProps) {
+  const isSuperAdmin = userRole === 'admin' && (mitraId === null || mitraId === undefined);
+
   const columns: ColumnDef<User>[] = [
     {
       header: "NRP (Username)",
       accessorKey: "nrp",
-      className: "font-mono font-bold text-slate-500",
+      className: "font-bold text-black",
     },
     {
       header: "Profil Pengguna",
@@ -37,8 +41,8 @@ export function UsersTable({ data }: UsersTableProps) {
             <AvatarFallback>{(user.employee?.full_name || user.nrp)[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-[14px] font-bold text-slate-800 leading-tight tracking-tight">{user.employee?.full_name || "Belum ada nama"}</span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5">{user.employee?.position?.pos_name || "Bukan karyawan"}</span>
+            <span className="text-[14px] font-bold text-black leading-tight tracking-tight">{user.employee?.full_name || "Belum ada nama"}</span>
+            <span className="text-[11px] font-bold text-black mt-0.5">{user.employee?.position?.pos_name || "Bukan karyawan"}</span>
           </div>
         </div>
       ),
@@ -60,31 +64,62 @@ export function UsersTable({ data }: UsersTableProps) {
         <div className="flex justify-center">
            {user.is_active ? 
               <span className="flex items-center gap-1.5 text-emerald-600 font-bold text-[12px]"><CheckCircle2 className="h-4 w-4"/> Aktif</span> : 
-              <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[12px]"><XCircle className="h-4 w-4"/> Suspend</span>
+              <span className="flex items-center gap-1.5 text-yellow-600 font-bold text-[12px]"><XCircle className="h-4 w-4"/> Suspend</span>
            }
-        </div>
-      ),
-    },
-    {
-      header: "Aksi",
-      accessorKey: "actions",
-      className: "text-right",
-      cell: (user) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" className={user.is_active ? "text-red-500 border-red-100 hover:bg-red-50" : "text-emerald-500 border-emerald-100 hover:bg-emerald-50"}
-                  onClick={() => (window as any).toggleUserStatus(user.nrp, !user.is_active)}>
-            {user.is_active ? "Nonaktifkan" : "Aktifkan"}
-          </Button>
         </div>
       ),
     },
   ];
 
+  if (isSuperAdmin) {
+    columns.push({
+      header: "Aksi",
+      accessorKey: "actions",
+      className: "text-right",
+      cell: (user) => (
+        <div className="flex justify-end gap-2.5">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className={`h-9 w-9 flex items-center justify-center rounded-xl transition-all shadow-sm ${user.is_active ? "text-yellow-600 border-yellow-100 bg-yellow-50/50 hover:bg-yellow-100/50 hover:border-yellow-300" : "text-emerald-600 border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/50 hover:border-emerald-300"}`}
+                      onClick={() => (window as any).toggleUserStatus(user.nrp, !user.is_active)}
+                  >
+                      {user.is_active ? <ShieldX className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className={`${user.is_active ? "bg-yellow-500 text-yellow-950" : "bg-emerald-600 text-white"} border-none text-[10px] font-black uppercase tracking-widest px-3 py-1.5 shadow-lg shadow-black/10`}>
+                  <p>{user.is_active ? "Nonaktifkan Akses" : "Aktifkan Akses"}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-9 w-9 flex items-center justify-center rounded-xl transition-all text-red-600 border-red-100 bg-red-50/50 hover:bg-red-100/50 hover:border-red-300 shadow-sm"
+                      onClick={() => (window as any).deleteUser(user.nrp)}
+                  >
+                      <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-red-600 text-white border-none text-[10px] font-bold uppercase tracking-widest px-3 py-1.5" style={{ zIndex: 9999 }}>
+                  <p>Hapus Permanen</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+        </div>
+      ),
+    });
+  }
+
   return (
     <ModernDataTable 
       data={data} 
       columns={columns} 
-      title="Manajemen Akses Dashboard"
       searchPlaceholder="Cari NRP atau nama..." 
     />
   );

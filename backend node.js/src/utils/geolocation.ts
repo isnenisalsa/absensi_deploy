@@ -24,3 +24,46 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
     const distance = R * c; 
     return distance; // Jarak aktual di bumi
 };
+
+/**
+ * Interface untuk koordinat GPS
+ */
+export interface Point {
+    lat: number;
+    lng: number;
+}
+
+/**
+ * Mengecek apakah sebuah titik berada di dalam polygon menggunakan Ray Casting Algorithm.
+ */
+export const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {
+    let isInside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+
+        const intersect = ((yi > point.lng) !== (yj > point.lng))
+            && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
+        if (intersect) isInside = !isInside;
+    }
+    return isInside;
+};
+
+/**
+ * Memparsing string koordinat format "lat,lng#lat,lng#..." menjadi array of Point.
+ */
+export const parsePolygonCoords = (coordsStr: string): Point[] => {
+    try {
+        return coordsStr.split('#').map(p => {
+            const parts = p.split(',');
+            if (parts.length !== 2) throw new Error("Format koordinat salah");
+            return {
+                lat: parseFloat(parts[0].trim()),
+                lng: parseFloat(parts[1].trim())
+            };
+        });
+    } catch (err) {
+        console.error("Gagal parsing polygon_coords:", err);
+        return [];
+    }
+};

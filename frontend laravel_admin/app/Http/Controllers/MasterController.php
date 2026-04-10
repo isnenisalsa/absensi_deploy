@@ -8,7 +8,17 @@ use Illuminate\Support\Facades\Session;
 
 class MasterController extends Controller
 {
-    private $baseUrl = 'http://localhost:3000/api/master';
+    private $baseUrl;
+
+    public function __construct()
+    {
+        // PINDAH KE 3001 untuk menghindari Server Hantu
+        $host = trim(env('API_URL', 'http://localhost:3000'));
+        $host = rtrim($host, '/');
+        $this->baseUrl = $host . '/api/master';
+        
+        \Log::info("MasterController Initialized. Calling Backend at: " . $this->baseUrl);
+    }
 
     private function getHeaders()
     {
@@ -67,8 +77,11 @@ class MasterController extends Controller
         
         $response = Http::withHeaders($this->getHeaders())->get("{$this->baseUrl}/departments");
         $departments = $response->successful() ? $response->json() : [];
+
+        $resDivs = Http::withHeaders($this->getHeaders())->get("{$this->baseUrl}/divisions");
+        $divisions = $resDivs->successful() ? $resDivs->json() : [];
         
-        return view('master.departments', compact('departments'));
+        return view('master.departments', compact('departments', 'divisions'));
     }
 
     public function storeDepartment(Request $request)
@@ -93,6 +106,35 @@ class MasterController extends Controller
         return $response->successful() 
             ? redirect()->back()->with('success', 'Departemen berhasil dihapus!')
             : redirect()->back()->withErrors(['error' => 'Gagal menghapus departemen: ' . $response->body()]);
+    }
+
+    public function bulkDestroyDepartments(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (!$ids || !is_array($ids)) {
+            return redirect()->back()->withErrors(['error' => 'Tidak ada departemen yang dipilih.']);
+        }
+
+        $response = Http::withHeaders($this->getHeaders())->delete("{$this->baseUrl}/departments/bulk", ['ids' => $ids]);
+        return $response->successful() 
+            ? redirect()->back()->with('success', count($ids) . ' Departemen berhasil dihapus sekaligus!')
+            : redirect()->back()->withErrors(['error' => 'Gagal menghapus departemen massal: ' . $response->body()]);
+    }
+
+    public function importDepartments(Request $request)
+    {
+        if (!$request->hasFile('file')) {
+            return redirect()->back()->withErrors(['error' => 'Pilih file Excel terlebih dahulu.']);
+        }
+
+        $file = $request->file('file');
+        $response = Http::withHeaders($this->getHeaders())
+            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
+            ->post("{$this->baseUrl}/departments/import");
+
+        return $response->successful() 
+            ? redirect()->back()->with('success', $response->json()['message'] ?? 'Import departemen berhasil!')
+            : redirect()->back()->withErrors(['error' => 'Gagal impor departemen: ' . ($response->json()['error'] ?? $response->body())]);
     }
 
     public function divisions()
@@ -133,6 +175,42 @@ class MasterController extends Controller
             : redirect()->back()->withErrors(['error' => 'Gagal menghapus divisi: ' . $response->body()]);
     }
 
+    public function bulkDestroyDivisions(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (!$ids || !is_array($ids)) {
+            return redirect()->back()->withErrors(['error' => 'Tidak ada divisi yang dipilih.']);
+        }
+
+        $response = Http::withHeaders($this->getHeaders())->delete("{$this->baseUrl}/divisions/bulk", ['ids' => $ids]);
+        return $response->successful() 
+            ? redirect()->back()->with('success', count($ids) . ' Divisi berhasil dihapus sekaligus!')
+            : redirect()->back()->withErrors(['error' => 'Gagal menghapus divisi massal: ' . $response->body()]);
+    }
+
+    public function importDivisions(Request $request)
+    {
+        if (!$request->hasFile('file')) {
+            return redirect()->back()->withErrors(['error' => 'Pilih file Excel terlebih dahulu.']);
+        }
+
+        $file = $request->file('file');
+        $url = "{$this->baseUrl}/divisions/import";
+        \Log::info("Attempting Import Divisions to URL: " . $url);
+
+        $response = Http::withHeaders($this->getHeaders())
+            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
+            ->post($url);
+        
+        if (!$response->successful()) {
+            \Log::error("Import Divisions FAILED. Status: " . $response->status() . " Body: " . $response->body());
+        }
+
+        return $response->successful() 
+            ? redirect()->back()->with('success', $response->json()['message'] ?? 'Import divisi berhasil!')
+            : redirect()->back()->withErrors(['error' => 'Gagal impor divisi: ' . ($response->json()['error'] ?? $response->body())]);
+    }
+
     // ==========================================
     // POSITIONS
     // ==========================================
@@ -170,44 +248,45 @@ class MasterController extends Controller
             : redirect()->back()->withErrors(['error' => 'Gagal menghapus jabatan: ' . $response->body()]);
     }
 
-    // ==========================================
-    // LOKASI KERJA (GEOFENCE SITES)
-    // ==========================================
-    public function locations()
+    public function bulkDestroyPositions(Request $request)
     {
-        if (!Session::has('api_token')) return redirect('/login');
+        $ids = $request->input('ids');
+        if (!$ids || !is_array($ids)) {
+            return redirect()->back()->withErrors(['error' => 'Tidak ada jabatan yang dipilih.']);
+        }
+
+        $response = Http::withHeaders($this->getHeaders())
+            ->send('DELETE', "{$this->baseUrl}/positions/bulk", [
+                'json' => ['ids' => $ids]
+            ]);
+
+        if ($response->successful()) {
+            return redirect()->back()->with('success', $response->json()['message'] ?? 'Jabatan terpilih berhasil dihapus!');
+        }
+
+        return redirect()->back()->withErrors(['error' => 'Gagal menghapus jabatan terpilih: ' . $response->body()]);
+    }
+
+    public function importPositions(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        $file = $request->file('file');
         
-        $response = Http::withHeaders($this->getHeaders())->get("{$this->baseUrl}/locations");
-        $locations = $response->successful() ? $response->json() : [];
-        
-        return view('master.locations', compact('locations'));
+        $response = Http::withHeaders($this->getHeaders())
+            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
+            ->post("{$this->baseUrl}/positions/import");
+
+        if ($response->successful()) {
+            return redirect()->back()->with('success', $response->json()['message'] ?? 'Import berhasil!');
+        }
+
+        $error = $response->json()['error'] ?? 'Gagal mengimpor data';
+        return redirect()->back()->withErrors(['error' => $error]);
     }
 
-    public function storeLocation(Request $request)
-    {
-        $response = Http::withHeaders($this->getHeaders())->post("{$this->baseUrl}/locations", $request->all());
-        if ($response->successful()) {
-            return redirect()->back()->with('success', 'Lokasi Kerja berhasil ditambahkan!');
-        }
-        return redirect()->back()->withErrors(['error' => 'Gagal menambah lokasi: ' . $response->body()]);
-    }
 
-    public function updateLocation(Request $request, $id)
-    {
-        $response = Http::withHeaders($this->getHeaders())->put("{$this->baseUrl}/locations/{$id}", $request->all());
-        if ($response->successful()) {
-            return redirect()->back()->with('success', 'Data Lokasi berhasil diperbarui!');
-        }
-        return redirect()->back()->withErrors(['error' => 'Gagal memperbarui lokasi: ' . $response->body()]);
-    }
-
-    public function destroyLocation($id)
-    {
-        $response = Http::withHeaders($this->getHeaders())->delete("{$this->baseUrl}/locations/{$id}");
-        if ($response->successful()) {
-            return redirect()->back()->with('success', 'Lokasi Kerja berhasil dihapus!');
-        }
-        return redirect()->back()->withErrors(['error' => 'Gagal menghapus lokasi: ' . $response->body()]);
-    }
 
 }

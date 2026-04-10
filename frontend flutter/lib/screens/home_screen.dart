@@ -1,66 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../services/auth_service.dart';
+import '../services/attendance_service.dart';
+import 'package:intl/intl.dart';
+import 'shift_detail_screen.dart';
+import 'shift_history_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  final Function(int) onTabChange;
+  const HomeScreen({super.key, required this.onTabChange});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Map<String, dynamic>? _userData;
+  Map<String, dynamic>? _todayStatus;
+  final String _currentDate = DateFormat("EEEE, d MMMM yyyy", "id_ID").format(DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final data = await authService.getUserData();
+    final today = await attendanceService.getTodayStatus();
+    
+    if (mounted) {
+      setState(() {
+        _userData = data;
+        _todayStatus = today;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Karena Scaffold dan SafeArea sudah diamankan di MainLayout, 
-    // HomeScreen sekarang murni bertugas mengatur deretan konten utamanya.
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 120),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const SizedBox(height: 110), // Aman dari Fixed Glassmorphic Header
+
           // 1. GREETINGS & DATE ROW
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Selamat Datang, USER",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Jum'at, 27 Maret 2027",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
+              Text(
+                "Selamat Datang,",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
               ),
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF3B30), // Red Dot
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    "Belum Check - In",
-                    style: TextStyle(
-                      color: Color(0xFFFF3B30),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              )
+              const SizedBox(height: 2),
+              Text(
+                _userData?['employee_data']?['full_name'] ?? 'User',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1.0,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _currentDate,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade600,
+                  letterSpacing: -0.2,
+                ),
+              ),
             ],
           ),
 
@@ -68,59 +87,113 @@ class HomeScreen extends StatelessWidget {
 
           // 2. ATTENDANCE STATUS CARD
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
                 )
               ],
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  "ATTENDANCE STATUS",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.grey.shade500,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Menunggu Check - In",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF007AFF), // Apple Blue
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    FaIcon(
-                      FontAwesomeIcons.clock,
-                      size: 14,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      "Next limit: 07:15 WITA",
+                      "ATTENDANCE STATUS",
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.grey.shade400,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor().withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: _getStatusColor().withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        _getDisplayStatus().toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: _getStatusColor(),
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
-                )
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("CHECK - IN", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _todayStatus?['attendance']?['check_in'] != null 
+                                ? _formatShiftTime(_todayStatus!['attendance']['check_in']['time_wita'])
+                                : "--:--",
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black87),
+                          ),
+                          if (_todayStatus?['attendance']?['check_in'] != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                _todayStatus!['attendance']['check_in']['work_location'] ?? "Syncing Location...",
+                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF007AFF)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
+                    Container(
+                      height: 40,
+                      width: 1,
+                      color: Colors.grey.shade200,
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("CHECK - OUT", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _todayStatus?['attendance']?['check_out'] != null 
+                                ? _formatShiftTime(_todayStatus!['attendance']['check_out']['time_wita'])
+                                : "--:--",
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black87),
+                          ),
+                          if (_todayStatus?['attendance']?['check_out'] != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                _todayStatus!['attendance']['check_out']['work_location'] ?? "Syncing Location...",
+                                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF007AFF)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -155,18 +228,26 @@ class HomeScreen extends StatelessWidget {
                         letterSpacing: 1.5,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF007AFF),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        "Lihat",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ShiftDetailScreen()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF007AFF),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          "Lihat",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     )
@@ -178,7 +259,10 @@ class HomeScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Shift Code", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                    const Text("Shift 1", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text(
+                      _todayStatus?['roster']?['shift']?['shift_code'] ?? "-",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -187,7 +271,10 @@ class HomeScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Check-in", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                    const Text("07:15 WITA", style: TextStyle(color: Color(0xFF34C759), fontWeight: FontWeight.bold, fontSize: 13)), // System Green
+                    Text(
+                      _formatShiftTime(_todayStatus?['roster']?['shift']?['time_in_expected']),
+                      style: const TextStyle(color: Color(0xFF34C759), fontWeight: FontWeight.bold, fontSize: 13)
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -196,34 +283,83 @@ class HomeScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Check-out", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                    const Text("17:15 WITA", style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.bold, fontSize: 13)), // System Red
+                    Text(
+                      _formatShiftTime(_todayStatus?['roster']?['shift']?['time_out_expected']),
+                      style: const TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.bold, fontSize: 13)
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Row 4: Plan Location
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Plan Location (Roster)", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text(
+                      _todayStatus?['roster']?['work_location'] ?? "-",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Row 5: Actual Location
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Actual Location", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    Text(
+                      _todayStatus?['roster']?['actual_location'] ?? "-",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 13,
+                        color: _getActualLocationColor(),
+                      )
+                    ),
                   ],
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           // 4. GIANT "ABSEN" BUTTON
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007AFF), // Apple Blue
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shadowColor: const Color(0xFF007AFF).withValues(alpha: 0.3),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 24),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF007AFF).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
             ),
-            child: const Text(
-              "A B S E N",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 4.0,
+            child: ElevatedButton(
+              onPressed: () => widget.onTabChange(1),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF007AFF), // Apple Blue
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FaIcon(FontAwesomeIcons.fingerprint, size: 26),
+                  SizedBox(width: 16),
+                  Text(
+                    "ABSEN SEKARANG",
+                    style: TextStyle(
+                      fontSize: 22, 
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -241,13 +377,21 @@ class HomeScreen extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              Text(
-                "LIHAT SEMUA",
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF007AFF),
-                  letterSpacing: 0.5,
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ShiftHistoryScreen()),
+                  );
+                },
+                child: Text(
+                  "LIHAT SEMUA",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF007AFF),
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],
@@ -271,7 +415,7 @@ class HomeScreen extends StatelessWidget {
             iconWidget: const FaIcon(FontAwesomeIcons.clockRotateLeft, color: Colors.white, size: 20),
           ),
 
-          const SizedBox(height: 48), // Bottom Breathing Space
+          const SizedBox(height: 120), // Bottom Breathing Space (Aman dari Blurred Footer)
         ],
       ),
     );
@@ -349,5 +493,66 @@ class HomeScreen extends StatelessWidget {
         )
       ],
     );
+  }
+
+  String _getDisplayStatus() {
+    final status = _todayStatus?['status'];
+    switch (status) {
+      case 'checked_in':
+        return "Sudah Check - In";
+      case 'completed':
+        return "Tugas Selesai";
+      case 'waiting':
+      default:
+        return "Menunggu Check - In";
+    }
+  }
+
+  Color _getStatusColor() {
+    final status = _todayStatus?['status'];
+    switch (status) {
+      case 'checked_in':
+        return const Color(0xFF34C759); // Green
+      case 'completed':
+        return const Color(0xFF8E8E93); // Grey
+      case 'waiting':
+      default:
+        return const Color(0xFF007AFF); // Blue
+    }
+  }
+
+  Color _getActualLocationColor() {
+    final actual = _todayStatus?['roster']?['actual_location'];
+    final plan = _todayStatus?['roster']?['work_location'];
+    
+    if (actual == null || actual == "-" || plan == null) {
+      return Colors.grey.shade600;
+    }
+    
+    if (actual == plan) {
+      return const Color(0xFF007AFF); // Blue (match)
+    } else {
+      return const Color(0xFFFF3B30); // Red (mismatch)
+    }
+  }
+
+  String _formatShiftTime(String? timeStr) {
+    if (timeStr == null) return "-";
+    try {
+      // If it contains a 'Z', it might be UTC from Prisma/MySQL TIME column
+      // we want to display the literal hour regardless of timezone shifts 
+      // because we've adjusted the backend to store literal local hours.
+      final dateTime = DateTime.parse(timeStr);
+      // We format the raw hour/minute from the object
+      return "${DateFormat("HH:mm").format(dateTime)} WITA";
+    } catch (e) {
+      if (timeStr.contains(":")) {
+        final parts = timeStr.split(":");
+        if (parts.length >= 2) {
+          return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')} WITA";
+        }
+      }
+      return timeStr;
+    }
   }
 }

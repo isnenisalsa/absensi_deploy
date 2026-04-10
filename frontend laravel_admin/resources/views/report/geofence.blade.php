@@ -55,15 +55,17 @@
         <div class="lg:col-span-4 flex flex-col gap-4">
             <h3 class="font-extrabold text-slate-800 text-[15px] flex justify-between items-center">
                 <span class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-emerald-500"></i> Daftar Lokasi Kerja</span>
+                @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
                 <button onclick="createNewLocation()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
                     <i class="fa-solid fa-plus text-[10px]"></i> Tambah
                 </button>
+                @endif
             </h3>
             <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden flex flex-col">
                 <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex flex-col gap-3">
-                    <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex justify-between items-center">
+                    <div class="text-[10px] font-extrabold text-black uppercase tracking-widest flex justify-between items-center">
                         <span>Pilih Lokasi</span>
-                        <span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full transition-all" id="locationCountbadge">{{ count($locations) }} Data</span>
+                        <span class="bg-slate-200 text-black px-2 py-0.5 rounded-full transition-all" id="locationCountbadge">{{ count($locations) }} Data</span>
                     </div>
                     <!-- Search Input -->
                     <div class="relative">
@@ -144,29 +146,35 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8 relative z-10">
                     <div class="flex flex-col md:col-span-4">
-                        <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Latitude</label>
+                        <label class="text-[10px] font-extrabold text-black uppercase tracking-widest mb-2.5 ml-1">Latitude</label>
                         <input type="text" id="latInput" name="latitude" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" required placeholder="-6.175110"/>
                     </div>
                     <div class="flex flex-col md:col-span-4">
-                        <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Longitude</label>
+                        <label class="text-[10px] font-extrabold text-black uppercase tracking-widest mb-2.5 ml-1">Longitude</label>
                         <input type="text" id="lngInput" name="longitude" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" required placeholder="106.827153"/>
                     </div>
                     <div class="flex flex-col md:col-span-4">
-                        <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Radius (Meter)</label>
+                        <label class="text-[10px] font-extrabold text-black uppercase tracking-widest mb-2.5 ml-1">Radius (Meter)</label>
                         <div class="relative flex items-center gap-4 bg-slate-50/50 border border-slate-200 rounded-xl py-2 px-3 shadow-sm focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-500 focus-within:bg-white transition-all">
                             <input type="range" id="radiusSlider" min="10" max="2000" step="5" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"/>
-                            <input type="number" id="radiusInput" name="radius_meters" class="w-16 bg-white border border-slate-200 rounded-lg py-1 text-center text-[12px] font-extrabold text-[#0052cc] shadow-sm outline-none" required/>
+                            <input type="number" id="radiusInput" name="radius_meters" class="w-16 bg-white border border-slate-200 rounded-lg py-1 text-center text-[12px] font-extrabold text-black shadow-sm outline-none" required/>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row justify-end items-center gap-3 pt-2">
+                    @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
                     <button type="button" id="btnDeleteGeofence" onclick="deleteCurrentGeofence()" class="hidden w-full sm:w-auto px-6 py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-extrabold text-[12px] rounded-xl transition-all uppercase tracking-widest items-center justify-center gap-2 border border-red-100">
                         <i class="fa-solid fa-trash-can text-[14px]"></i> HAPUS AREAL
                     </button>
                     <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
                         <i class="fa-solid fa-satellite text-[14px]"></i> SIMPAN KOORDINAT
                     </button>
+                    @else
+                    <div class="text-[10px] font-bold text-slate-400 italic">
+                        <i class="fa-solid fa-lock mr-1"></i> Mode Read-Only: Hanya Super Admin yang dapat mengubah koordinat geofence.
+                    </div>
+                    @endif
                 </div>
             </form>
         </div>
@@ -179,12 +187,12 @@
 <script>
     let map = L.map('map').setView([-6.175110, 106.827153], 15);
     
-    const mapDefault = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 20
+    const mapDefault = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Maps', subdomains: ['0', '1', '2', '3'], maxZoom: 20
     });
     
-    const mapSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri', maxZoom: 20
+    const mapSatellite = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Maps Satellite', subdomains: ['0', '1', '2', '3'], maxZoom: 20
     });
     
     mapDefault.addTo(map);

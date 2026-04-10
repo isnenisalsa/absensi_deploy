@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         
@@ -199,17 +200,17 @@
                     </div>
                     <!-- Master Content -->
                     <div class="flex flex-col">
-                        <button onclick="toggleMasterMenu()" class="sidebar-item w-full flex items-center h-12 rounded-xl transition-all duration-300 {{ request()->routeIs('master.*') || request()->is('report/geofence') || request()->is('employees*') ? 'bg-blue-50 text-[#0052cc]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <button onclick="toggleMasterMenu()" class="sidebar-item w-full flex items-center h-12 rounded-xl transition-all duration-300 {{ request()->routeIs('master.*') || request()->routeIs('users.*') || request()->is('report/geofence') || request()->is('employees*') ? 'bg-blue-50 text-[#0052cc]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
                             <div class="w-14 h-12 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-database text-[16px]"></i>
                             </div>
                             <span class="text-[13px] font-bold whitespace-nowrap nav-label flex-1 text-left transition-opacity duration-300">Master Data</span>
                             <div class="w-10 flex items-center justify-center nav-label transition-opacity duration-300">
-                                <i id="masterChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 {{ request()->routeIs('master.*') || request()->is('employees*') || request()->is('report/geofence') ? 'rotate-180' : '' }}"></i>
+                                <i id="masterChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 {{ request()->routeIs('master.*') || request()->routeIs('users.*') || request()->is('employees*') || request()->is('report/geofence') ? 'rotate-180' : '' }}"></i>
                             </div>
                             <div class="tooltip absolute left-full ml-3 px-2 py-1.5 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-all">Master Data</div>
                         </button>
-                        <div id="masterSubMenu" class="transition-all duration-300 ease-in-out {{ request()->routeIs('master.*') || request()->is('report/geofence') || request()->is('employees*') ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0' }} grid overflow-hidden">
+                        <div id="masterSubMenu" class="transition-all duration-300 ease-in-out {{ request()->routeIs('master.*') || request()->routeIs('users.*') || request()->is('report/geofence') || request()->is('employees*') ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0' }} grid overflow-hidden">
                             <div class="overflow-hidden flex flex-col gap-0.5 pl-14">
                                 <a href="{{ url('/employees') }}" class="flex items-center h-10 transition-all {{ request()->is('employees*') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-user-group text-[12px] mr-2"></i>
@@ -225,7 +226,7 @@
                                 </a>
                                 <a href="{{ route('master.departments') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.departments') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-sitemap text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Department</span>
+                                    <span class="text-[12px] font-bold">Departemen</span>
                                 </a>
                                 <a href="{{ route('master.divisions') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.divisions') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-folder-tree text-[12px] mr-2"></i>
@@ -233,20 +234,17 @@
                                 </a>
                                 <a href="{{ route('master.positions') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.positions') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-id-badge text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Jabatan</span>
+                                    <span class="text-[12px] font-bold">Posisi</span>
                                 </a>
                                 <a href="{{ route('report.geofence') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('report.geofence') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-location-dot text-[12px] mr-2"></i>
                                     <span class="text-[12px] font-bold">Geofence (Setting)</span>
                                 </a>
-                                <a href="{{ route('master.locations') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.locations') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
-                                    <i class="fa-solid fa-map-location-dot text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Lokasi Kerja</span>
-                                </a>
-                                @if(session('user.role') === 'admin' && session('user.mitra_id') === null)
-                                <a href="{{ route('master.mitra') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.mitra') ? 'text-indigo-600 font-black' : 'text-slate-500 hover:text-slate-100 dark:hover:text-white' }}">
-                                    <i class="fa-solid fa-handshake text-[12px] mr-2 text-indigo-500"></i>
-                                    <span class="text-[12px] font-bold">Mitra Kerja (Subcon)</span>
+
+                                @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
+                                <a href="{{ route('master.mitra') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.mitra') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
+                                    <i class="fa-solid fa-handshake text-[12px] mr-2"></i>
+                                    <span class="text-[12px] font-bold">Mitra Kerja / Subcon</span>
                                 </a>
                                 @endif
                             </div>

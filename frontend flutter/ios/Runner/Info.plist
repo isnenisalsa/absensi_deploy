@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Aplikasi membutuhkan akses FaceID untuk mempermudah proses login Anda.</string>
 </dict>
 </plist>

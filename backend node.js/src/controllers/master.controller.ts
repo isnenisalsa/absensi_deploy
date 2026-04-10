@@ -23,15 +23,6 @@ export const getDepartments = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const getPositions = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const positions = await prisma.positions.findMany();
-      res.json(positions);
-    } catch (err) {
-      res.status(500).json({ error: 'Error fetching positions' });
-    }
-};
-
 // --- GEOFENCE LOCATION DATA (LOKASI KERJA) ---
 export const getLocations = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -57,7 +48,8 @@ export const createLocation = async (req: Request, res: Response): Promise<void>
         location_name,
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
-        radius_meters: radius_meters ? Number(radius_meters) : 50
+        radius_meters: radius_meters ? Number(radius_meters) : 50,
+        polygon_coords: req.body.polygon_coords || null
       }
     });
 
@@ -78,7 +70,8 @@ export const updateLocation = async (req: Request, res: Response): Promise<void>
         ...(location_name && { location_name }),
         latitude: latitude ? Number(latitude) : null,
         longitude: longitude ? Number(longitude) : null,
-        radius_meters: radius_meters ? Number(radius_meters) : 50
+        radius_meters: radius_meters ? Number(radius_meters) : 50,
+        polygon_coords: req.body.polygon_coords !== undefined ? req.body.polygon_coords : undefined
       }
     });
     
@@ -231,10 +224,35 @@ export const deleteDivision = async (req: Request, res: Response): Promise<void>
 };
 
 // --- POSITIONS ---
+export const getPositions = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const positions = await prisma.positions.findMany({
+        include: {
+          allowed_locations: {
+            include: { location: true }
+          }
+        }
+      });
+      res.json(positions);
+    } catch (err) {
+      res.status(500).json({ error: 'Error fetching positions' });
+    }
+};
+
 export const createPosition = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { pos_name } = req.body;
-    const created = await prisma.positions.create({ data: { pos_name } });
+    const { pos_name, allow_any_location, location_ids } = req.body;
+    const created = await prisma.positions.create({ 
+      data: { 
+        pos_name,
+        allow_any_location: !!allow_any_location,
+        allowed_locations: {
+          create: (location_ids || []).map((id: number) => ({
+            location: { connect: { location_id: Number(id) } }
+          }))
+        }
+      } 
+    });
     res.json({ message: 'Position created', data: created });
   } catch (err) {
     res.status(500).json({ error: 'Error creating position', details: String(err) });
@@ -243,10 +261,42 @@ export const createPosition = async (req: Request, res: Response): Promise<void>
 export const updatePosition = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { pos_name } = req.body;
-    const updated = await prisma.positions.update({ where: { pos_id: Number(id) }, data: { pos_name } });
+    const { pos_name, allow_any_location, location_ids } = req.body;
+    
+    // Use transaction to update position and its locations
+    const updated = await prisma.$transaction(async (tx) => {
+      // 1. Delete existing locations if location_ids is provided
+      if (location_ids !== undefined) {
+        await tx.position_locations.deleteMany({
+          where: { pos_id: Number(id) }
+        });
+      }
+
+      // 2. Update position and create new location relations
+      return await tx.positions.update({ 
+        where: { pos_id: Number(id) }, 
+        data: { 
+          ...(pos_name && { pos_name }),
+          ...(allow_any_location !== undefined && { allow_any_location: !!allow_any_location }),
+          ...(location_ids !== undefined && {
+            allowed_locations: {
+              create: location_ids.map((locId: number) => ({
+                location: { connect: { location_id: Number(locId) } }
+              }))
+            }
+          })
+        },
+        include: {
+          allowed_locations: {
+            include: { location: true }
+          }
+        }
+      });
+    });
+
     res.json({ message: 'Position updated', data: updated });
   } catch (err) {
+    console.error('Update Position Error:', err);
     res.status(500).json({ error: 'Error updating position', details: String(err) });
   }
 };

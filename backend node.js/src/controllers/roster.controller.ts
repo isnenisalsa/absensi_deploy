@@ -90,6 +90,21 @@ export const bulkCreateRoster = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Data roster harus berupa array' });
     }
 
+    const mitraId = req.user?.mitra_id;
+    if (mitraId) {
+        // Collect all NRPs from the request
+        const nrps = [...new Set(rosters.map(r => r.nrp))];
+        const employees = await prisma.employees.findMany({
+            where: { nrp: { in: nrps } },
+            select: { nrp: true, mitra_id: true }
+        });
+
+        const unauthorized = employees.some(e => e.mitra_id !== mitraId);
+        if (unauthorized || employees.length !== nrps.length) {
+            return res.status(403).json({ error: 'Beberapa karyawan tidak valid atau bukan milik mitra Anda' });
+        }
+    }
+
     const results = await prisma.$transaction(
       rosters.map((r) =>
         prisma.rosters.upsert({
@@ -123,6 +138,18 @@ export const bulkCreateRoster = async (req: Request, res: Response) => {
 export const deleteRoster = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const mitraId = req.user?.mitra_id;
+
+    if (mitraId) {
+        const roster = await prisma.rosters.findUnique({
+            where: { id: Number(id) },
+            include: { employee: true }
+        });
+        if (!roster || roster.employee.mitra_id !== mitraId) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses untuk menghapus roster ini' });
+        }
+    }
+
     await prisma.rosters.delete({
       where: { id: Number(id) },
     });

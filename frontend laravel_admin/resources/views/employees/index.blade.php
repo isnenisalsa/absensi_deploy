@@ -21,13 +21,15 @@
                 <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0052cc] to-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                     <i class="fa-solid fa-user-plus text-[18px]"></i>
                 </div>
-                <h1 class="text-2xl md:text-[28px] font-[900] text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight leading-none">Manajemen Akun Karyawan</h1>
+                <h1 class="text-2xl md:text-[28px] font-[900] text-black tracking-tight leading-none">Manajemen Akun Karyawan</h1>
             </div>
         </div>
         
+        @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
         <button onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
             <i class="fa-solid fa-plus"></i> DAFTARKAN KARYAWAN
         </button>
+        @endif
     </div>
 
     <!-- Alert Success/Error -->
@@ -46,7 +48,11 @@
     <div 
         id="employees-table-container" 
         data-react-component="employees-table" 
-        data-props="{{ json_encode(['data' => $employees]) }}"
+        data-props="{{ json_encode([
+            'data' => $employees,
+            'userRole' => Session::get('user_role'),
+            'mitraId' => Session::get('mitra_id')
+        ]) }}"
     >
         <div class="w-full h-64 bg-white rounded-2xl border border-slate-100 flex items-center justify-center">
             <div class="flex flex-col items-center gap-4">
@@ -283,6 +289,7 @@
     }
 
     function editEmployee(emp) {
+        console.log('[FRONTEND] Editing employee:', emp);
         empForm.action = `${updateEmpUrlBase}/${emp.nrp}`;
         if (empMethodField) empMethodField.value = 'PUT';
         
@@ -308,18 +315,29 @@
             isActiveSelect.value = emp.user.is_active ? 'true' : 'false';
         }
 
-        posIdSelect.value = emp.pos_id || '';
-        divIdSelect.value = emp.div_id || '';
-        locationIdSelect.value = emp.location_id || '';
-        if (mitraIdSelect) mitraIdSelect.value = emp.mitra_id || '';
+        // Helper to sync standard select and TomSelect if present
+        const syncValue = (el, val) => {
+            if (!el) return;
+            el.value = val || '';
+            if (el.tomselect) {
+                el.tomselect.setValue(val || '');
+            }
+        };
+
+        syncValue(posIdSelect, emp.pos_id);
+        syncValue(divIdSelect, emp.div_id);
+        syncValue(locationIdSelect, emp.location_id);
+        if (mitraIdSelect) syncValue(mitraIdSelect, emp.mitra_id);
         
         modalTitle.innerText = `Edit Karyawan: ${emp.full_name}`;
         btnSubmitEmp.innerHTML = `UPDATE DATA KARYAWAN`;
         modalContainer.classList.remove('hidden');
 
-        // Init Searchable Dropdowns
+        // Init/Refresh Searchable Dropdowns
         setTimeout(() => {
-            initSearchableSelects();
+            if (typeof initSearchableSelects === 'function') {
+                initSearchableSelects();
+            }
         }, 100);
 
         if (window.lucide) lucide.createIcons();

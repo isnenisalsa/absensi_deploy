@@ -21,14 +21,18 @@ interface Employee {
 
 interface EmployeesTableProps {
   data: Employee[];
+  userRole?: string;
+  mitraId?: number | null;
 }
 
-export function EmployeesTable({ data }: EmployeesTableProps) {
+export function EmployeesTable({ data, userRole, mitraId }: EmployeesTableProps) {
+  const isSuperAdmin = userRole === 'admin' && (mitraId === null || mitraId === undefined);
+
   const columns: ColumnDef<Employee>[] = [
     {
       header: "NRP",
       accessorKey: "nrp",
-      className: "font-mono font-bold text-slate-500",
+      className: "font-bold text-black",
     },
     {
       header: "Identitas Karyawan",
@@ -40,8 +44,8 @@ export function EmployeesTable({ data }: EmployeesTableProps) {
             <AvatarFallback>{emp.full_name[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-[14px] font-bold text-slate-800 leading-tight tracking-tight">{emp.full_name}</span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5">{emp.position?.pos_name || "Jabatan tidak diset"}</span>
+            <span className="text-[14px] font-bold text-black leading-tight tracking-tight">{emp.full_name}</span>
+            <span className="text-[11px] font-bold text-black mt-0.5">{emp.position?.pos_name || "Jabatan tidak diset"}</span>
           </div>
         </div>
       ),
@@ -80,43 +84,54 @@ export function EmployeesTable({ data }: EmployeesTableProps) {
         </div>
       ),
     },
-    {
+    ...(isSuperAdmin ? [{
       header: "Aksi",
       accessorKey: "actions",
       className: "text-right",
-      cell: (emp) => (
-        <div className="flex justify-end gap-2">
+      cell: (emp: Employee) => (
+        <div className="flex justify-end gap-2.5">
           <TooltipProvider>
             <Tooltip>
                <TooltipTrigger asChild>
-                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                         onClick={() => (window as any).editEmployee(emp)}>
+                 <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-9 w-9 rounded-xl transition-all text-blue-600 border-blue-100 bg-blue-50/50 hover:bg-blue-100/50 hover:border-blue-300 shadow-sm"
+                    onClick={() => (window as any).editEmployee(emp)}
+                 >
                    <Edit className="h-4 w-4" />
                  </Button>
                </TooltipTrigger>
-               <TooltipContent>Edit Data</TooltipContent>
+               <TooltipContent side="top" className="bg-blue-600 text-white border-none text-[10px] font-black uppercase tracking-widest px-3 py-1.5 shadow-lg shadow-black/10">
+                 <p>Edit Data Pekerja</p>
+               </TooltipContent>
             </Tooltip>
             
             <Tooltip>
                <TooltipTrigger asChild>
-                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
-                         onClick={() => (window as any).confirmDelete(emp.nrp, emp.full_name)}>
+                 <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-9 w-9 rounded-xl transition-all text-red-600 border-red-100 bg-red-50/50 hover:bg-red-100/50 hover:border-red-300 shadow-sm"
+                    onClick={() => (window as any).confirmDelete(emp.nrp, emp.full_name)}
+                 >
                    <Trash2 className="h-4 w-4" />
                  </Button>
                </TooltipTrigger>
-               <TooltipContent>Hapus Permanen</TooltipContent>
+               <TooltipContent side="top" className="bg-red-600 text-white border-none text-[10px] font-black uppercase tracking-widest px-3 py-1.5 shadow-lg shadow-black/10">
+                 <p>Hapus Permanen</p>
+               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
     <ModernDataTable 
       data={data} 
       columns={columns} 
-      title="Daftar Karyawan Terdaftar"
       searchPlaceholder="Cari NRP atau nama..." 
     />
   );

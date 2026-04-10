@@ -25,3 +25,14 @@ export const checkOutSchema = z.object({
     photo_url: z.string().url({ message: 'Wajib berformat URL gambar yang sah' }).optional(),
   })
 });
+
+export const ftwReportSchema = z.object({
+  body: z.object({
+    jam_tidur_12_jam: z.string().min(1, 'Data jam tidur wajib diisi'),
+    jam_bangun: z.string().min(1, 'Data jam bangun wajib diisi'),
+    konsumsi_obat: z.boolean(),
+    punya_masalah: z.boolean(),
+    gejala_kesehatan: z.boolean(),
+    status_ftw: z.string().optional(),
+  })
+});

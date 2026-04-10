@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getRosters, createRoster, bulkCreateRoster, deleteRoster } from '../controllers/roster.controller';
-import { authenticateToken } from '../middlewares/auth.middleware';
+import { authenticateToken, authorizeRoles } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.use(authenticateToken); // Protect roster routes
+router.use(authenticateToken); 
+router.use(authorizeRoles('admin', 'employee', 'safety', 'csr'));
 
 router.get('/', getRosters);
 router.post('/', createRoster);

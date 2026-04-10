@@ -3,26 +3,34 @@
 @section('title', 'Master Mitra Kerja (Subcontractor)')
 
 @section('content')
+<style>
+    .active-row {
+        background-color: rgba(59, 130, 246, 0.05) !important;
+        border-left: 4px solid #0052cc !important;
+    }
+    .active-row .subcon-name {
+        color: #0052cc !important;
+    }
+</style>
 <div class="p-6 md:p-10 w-full max-w-[1400px] mx-auto animate-fade-in-up">
     
     <!-- Header -->
     <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0052cc] to-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                 <i class="fa-solid fa-handshake text-[22px]"></i>
             </div>
             <div>
                 <div class="text-[11px] font-bold text-slate-400 uppercase tracking-[2px] mb-1">Master Data</div>
-                <h1 class="text-2xl md:text-[32px] font-black text-slate-800 tracking-tight leading-none">Mitra Kerja <span class="text-indigo-600">Subcontractor</span></h1>
+                <h1 class="text-2xl md:text-[32px] font-black text-slate-800 tracking-tight leading-none">Mitra Kerja <span class="text-blue-600">Subcontractor</span></h1>
             </div>
         </div>
         
-        <button onclick="openCreateModal()" class="group bg-slate-900 hover:bg-black text-white px-6 py-3.5 rounded-2xl font-bold text-[13px] transition-all flex items-center gap-3 shadow-xl shadow-slate-900/20 active:scale-95">
-            <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
-                <i class="fa-solid fa-plus text-[12px]"></i>
-            </div>
-            TAMBAH MITRA BARU
+        @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
+        <button onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2 active:scale-[0.98]">
+            <i class="fa-solid fa-plus text-sm"></i> TAMBAH DATA SUBCON
         </button>
+        @endif
     </div>
 
     <!-- Alert Success/Error -->
@@ -45,32 +53,44 @@
 
     <!-- Table Section -->
     <div class="bg-white rounded-[32px] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <!-- Table Toolbar (Simplified) -->
+        <div class="p-8 border-b border-slate-50 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/20">
+            <div class="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-2xl border border-blue-100">
+                <i class="fa-solid fa-circle-info text-blue-500 text-[10px]"></i>
+                <span class="text-[11px] font-black text-blue-700 uppercase tracking-widest leading-none">Total: {{ count($mitras) }} Mitra Terdaftar</span>
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse" id="mitraTable">
                 <thead>
                     <tr class="bg-slate-50/50">
-                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">ID</th>
-                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Nama Mitra</th>
-                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Kontak PAMA</th>
-                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Total Karyawan</th>
-                        <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Aksi</th>
+                        <th class="px-8 py-6 text-[11px] font-extrabold text-black tracking-widest border-b border-slate-100">No</th>
+                        <th class="px-8 py-6 text-[11px] font-extrabold text-black tracking-widest border-b border-slate-100">Nama Mitra</th>
+                        <th class="px-8 py-6 text-[11px] font-extrabold text-black tracking-widest border-b border-slate-100">Kontak PAMA</th>
+                        <th class="px-8 py-6 text-[11px] font-extrabold text-black tracking-widest border-b border-slate-100 text-center">Total Karyawan</th>
+                        @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
+                        <th class="px-8 py-6 text-[11px] font-extrabold text-black tracking-widest border-b border-slate-100 text-right">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @forelse($mitras as $m)
-                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <tr id="row-{{ $m['mitra_id'] }}" 
+                        onclick="selectRow({{ $m['mitra_id'] }})"
+                        class="hover:bg-slate-50/80 transition-all duration-200 group cursor-pointer">
                         <td class="px-8 py-6">
-                            <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">#{{ $m['mitra_id'] }}</span>
+                            <span class="text-xs font-bold text-black bg-slate-100 px-2 py-1 rounded-md">#{{ $m['mitra_id'] }}</span>
                         </td>
                         <td class="px-8 py-6">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-sm">
                                     {{ substr($m['mitra_name'], 0, 1) }}
                                 </div>
-                                <div class="font-extrabold text-slate-800 text-[15px]">{{ $m['mitra_name'] }}</div>
+                                <div class="subcon-name font-bold text-black text-[15px] transition-colors">{{ $m['mitra_name'] }}</div>
                             </div>
                         </td>
-                        <td class="px-8 py-6 text-[13px] font-bold text-slate-600">
+                        <td class="px-8 py-6 text-[13px] font-bold text-black">
                             {{ $m['contact_pama'] ?? '-' }}
                         </td>
                         <td class="px-8 py-6 text-center">
@@ -79,8 +99,9 @@
                                 {{ $m['_count']['employees'] ?? 0 }}
                             </div>
                         </td>
+                        @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
                         <td class="px-8 py-6 text-right">
-                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div class="flex justify-end gap-2">
                                 <button onclick='openEditModal({{ json_encode($m) }})' class="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl transition-all shadow-sm">
                                     <i class="fa-solid fa-pen-to-square text-[14px]"></i>
                                 </button>
@@ -89,6 +110,7 @@
                                 </button>
                             </div>
                         </td>
+                        @endif
                     </tr>
                     @empty
                     <tr>
@@ -98,6 +120,7 @@
                                     <i class="fa-solid fa-handshake-slash text-[32px]"></i>
                                 </div>
                                 <p class="text-slate-400 font-bold text-sm">Belum ada data Mitra Kerja.</p>
+                                <button onclick="openCreateModal()" class="text-blue-600 font-extrabold text-[11px] hover:underline uppercase tracking-widest mt-1">Tambah Data Subcon Sekarang</button>
                             </div>
                         </td>
                     </tr>
@@ -219,6 +242,19 @@
 
     function closeDeleteModal() {
         deleteModal.classList.add('hidden');
+    }
+
+    function selectRow(id) {
+        // Remove active class from all rows
+        document.querySelectorAll('tr[id^="row-"]').forEach(row => {
+            row.classList.remove('active-row');
+        });
+        
+        // Add active class to clicked row
+        const selectedRow = document.getElementById(`row-${id}`);
+        if (selectedRow) {
+            selectedRow.classList.add('active-row');
+        }
     }
 </script>
 @endsection

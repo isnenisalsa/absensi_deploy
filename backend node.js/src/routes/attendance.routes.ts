@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { checkIn, checkOut, getMyAttendance, getAllFtw } from '../controllers/attendance.controller';
-import { authenticateToken } from '../middlewares/auth.middleware';
+import { checkIn, checkOut, getMyAttendance, getAllFtw, getTodayStatus, submitFtwReport } from '../controllers/attendance.controller';
+import { authenticateToken, authorizeRoles } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validation.middleware';
-import { checkInSchema, checkOutSchema } from '../utils/schemas';
+import { checkInSchema, checkOutSchema, ftwReportSchema } from '../utils/schemas';
 
 const router = Router();
 
@@ -15,10 +15,16 @@ router.post('/check-in', validate(checkInSchema), checkIn);
 // Mengirimkan Absensi Keluar (Check-Out)
 router.post('/check-out', validate(checkOutSchema), checkOut);
 
-// Sejarah Transaksi Absensi user tersebut
-router.get('/history', getMyAttendance);
+// Mengirimkan Laporan Fit To Work (FTW)
+router.post('/ftw', validate(ftwReportSchema), submitFtwReport);
 
 // Data FTW untuk Admin
-router.get('/ftw', getAllFtw);
+router.get('/ftw', authorizeRoles('admin'), getAllFtw);
+
+// Status Absensi Hari Ini (Roster & History)
+router.get('/today-status', getTodayStatus);
+
+// Riwayat Absensi (History)
+router.get('/history', getMyAttendance);
 
 export default router;

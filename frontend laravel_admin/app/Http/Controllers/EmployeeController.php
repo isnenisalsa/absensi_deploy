@@ -33,6 +33,10 @@ class EmployeeController extends Controller
             return [
                 'nrp' => $emp['nrp'],
                 'full_name' => $emp['full_name'],
+                'pos_id' => $emp['pos_id'] ?? null,
+                'div_id' => $emp['div_id'] ?? null,
+                'dept_id' => $emp['dept_id'] ?? null,
+                'mitra_id' => $emp['mitra_id'] ?? null,
                 'location_id' => $emp['location_id'] ?? null,
                 'position' => ['pos_name' => $emp['position']['pos_name'] ?? '-'],
                 'division' => ['div_name' => $emp['division']['div_name'] ?? '-'],
@@ -92,10 +96,18 @@ class EmployeeController extends Controller
         if ($response->successful()) {
             return redirect()->back()->with('success', 'Data Karyawan berhasil diperbarui!');
         }
+
+        // Detailed logging for failed updates
+        \Log::error('[FRONTEND ERROR] Gagal memperbarui karyawan', [
+            'nrp' => $id,
+            'status' => $response->status(),
+            'error_body' => $response->json(),
+            'request_data' => $request->except(['_token', 'password'])
+        ]);
         
         $errorMsg = 'Gagal memperbarui karyawan.';
         if ($response->json() && isset($response->json()['error'])) {
-            $errorMsg = $response->json()['error'];
+            $errorMsg .= ' ' . $response->json()['error'];
         }
         
         return redirect()->back()->withErrors(['error' => $errorMsg]);

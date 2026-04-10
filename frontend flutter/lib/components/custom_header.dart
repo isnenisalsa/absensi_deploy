@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../screens/notification_screen.dart';
 
 class CustomHeader extends StatelessWidget {
   final String title;
   final bool showBackButton;
   final VoidCallback? onBackPressed;
+  final String? photoUrl;
 
   const CustomHeader({
     super.key,
     required this.title,
     this.showBackButton = false,
     this.onBackPressed,
+    this.photoUrl,
   });
 
   @override
@@ -48,16 +51,21 @@ class CustomHeader extends StatelessWidget {
               ),
             )
           else
-            const Padding(
-              padding: EdgeInsets.only(right: 12.0),
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
               child: CircleAvatar(
                 radius: 20,
-                backgroundColor: Color(0xFFE5E5EA), // Offline-safe Gray
-                child: FaIcon(
-                  FontAwesomeIcons.solidUser,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                backgroundColor: const Color(0xFFE5E5EA), // Offline-safe Gray
+                backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty) 
+                    ? NetworkImage(photoUrl!) 
+                    : null,
+                child: (photoUrl == null || photoUrl!.isEmpty)
+                    ? const FaIcon(
+                        FontAwesomeIcons.solidUser,
+                        color: Colors.white,
+                        size: 20,
+                      )
+                    : null,
               ),
             ),
             
@@ -76,30 +84,42 @@ class CustomHeader extends StatelessWidget {
           ),
           
           // Right Section: Notification Bell with Red Dot
-          Stack(
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(4.0),
-                child: FaIcon(
-                  FontAwesomeIcons.solidBell,
-                  color: Color(0xFF8E8E93), // iOS Systems Gray
-                  size: 20,
-                ),
-              ),
-              Positioned(
-                right: 2,
-                bottom: 2,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B30), // System Red
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque, // Pastikan area kosong tetap menangkap tap
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+              );
+            },
+            child: Container(
+              width: 44, // Ukuran target sentuh standar (Apple/Google)
+              height: 44,
+              alignment: Alignment.center,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const FaIcon(
+                    FontAwesomeIcons.solidBell,
+                    color: Color(0xFF8E8E93), // iOS Systems Gray
+                    size: 22, // Sedikit diperbesar
                   ),
-                ),
-              )
-            ],
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF3B30), // System Red
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
           )
         ],
       ),

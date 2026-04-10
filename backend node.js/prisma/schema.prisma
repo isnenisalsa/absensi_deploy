@@ -44,12 +44,15 @@ model mitras {
 }
 
 model locations {
-  location_id   Int         @id @default(autoincrement())
-  location_name String      @db.VarChar(255)
-  latitude      Decimal?    @db.Decimal(10, 8)
-  longitude     Decimal?    @db.Decimal(11, 8)
-  radius_meters Int         @default(50)
-  employees     employees[]
+  location_id    Int                  @id @default(autoincrement())
+  location_name  String               @db.VarChar(255)
+  latitude       Decimal?             @db.Decimal(10, 8)
+  longitude      Decimal?             @db.Decimal(11, 8)
+  radius_meters  Int                  @default(50)
+  polygon_coords String?              @db.Text
+  employees_list employee_locations[]
+  employees      employees[]
+  positions      position_locations[]
 }
 
 model departments {
@@ -69,25 +72,40 @@ model divisions {
 }
 
 model positions {
-  pos_id    Int         @id @default(autoincrement())
-  pos_name  String      @db.VarChar(255)
-  employees employees[]
+  pos_id             Int                  @id @default(autoincrement())
+  pos_name           String               @db.VarChar(255)
+  allow_any_location Boolean              @default(false)
+  employees          employees[]
+  allowed_locations  position_locations[]
+}
+
+model position_locations {
+  pos_id      Int
+  location_id Int
+  location    locations @relation(fields: [location_id], references: [location_id], onDelete: Cascade)
+  position    positions @relation(fields: [pos_id], references: [pos_id], onDelete: Cascade)
+
+  @@id([pos_id, location_id])
+  @@index([location_id], map: "position_locations_location_id_fkey")
 }
 
 model employees {
-  nrp                   String        @id @db.VarChar(255)
-  full_name             String        @db.VarChar(255)
+  nrp                   String               @id @db.VarChar(255)
+  full_name             String               @db.VarChar(255)
   pos_id                Int?
   div_id                Int?
   location_id           Int?
-  default_work_location String?       @db.VarChar(255)
+  default_work_location String?              @db.VarChar(255)
   mitra_id              Int?
+  photo_profile         String?              @db.VarChar(255)
+  allow_any_location    Boolean              @default(false)
   attendances           attendances[]
-  division              divisions?    @relation(fields: [div_id], references: [div_id])
-  location              locations?    @relation(fields: [location_id], references: [location_id])
-  mitra                 mitras?       @relation(fields: [mitra_id], references: [mitra_id])
-  user                  users         @relation(fields: [nrp], references: [nrp])
-  position              positions?    @relation(fields: [pos_id], references: [pos_id])
+  allowed_locations     employee_locations[]
+  division              divisions?           @relation(fields: [div_id], references: [div_id])
+  location              locations?           @relation(fields: [location_id], references: [location_id])
+  mitra                 mitras?              @relation(fields: [mitra_id], references: [mitra_id])
+  user                  users                @relation(fields: [nrp], references: [nrp])
+  position              positions?           @relation(fields: [pos_id], references: [pos_id])
   ftw_reports           ftw_reports[]
   rosters               rosters[]
 
@@ -95,6 +113,16 @@ model employees {
   @@index([location_id], map: "employees_location_id_fkey")
   @@index([pos_id], map: "employees_pos_id_fkey")
   @@index([mitra_id], map: "employees_mitra_id_fkey")
+}
+
+model employee_locations {
+  nrp         String
+  location_id Int
+  location    locations @relation(fields: [location_id], references: [location_id], onDelete: Cascade)
+  employee    employees @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
+
+  @@id([nrp, location_id])
+  @@index([location_id], map: "employee_locations_location_id_fkey")
 }
 
 model shifts {
@@ -133,15 +161,16 @@ model attendances {
 }
 
 model rosters {
-  id            Int       @id @default(autoincrement())
-  nrp           String    @db.VarChar(255)
-  date          DateTime  @db.Date
-  shift_id      Int?
-  work_location String?   @db.VarChar(255)
-  date_in       DateTime? @db.Date
-  date_out      DateTime? @db.Date
-  employee      employees @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
-  shift         shifts?   @relation(fields: [shift_id], references: [shift_id])
+  id              Int       @id @default(autoincrement())
+  nrp             String    @db.VarChar(255)
+  date            DateTime  @db.Date
+  shift_id        Int?
+  work_location   String?   @db.VarChar(255)
+  date_in         DateTime? @db.Date
+  date_out        DateTime? @db.Date
+  actual_location String?   @db.VarChar(255)
+  employee        employees @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
+  shift           shifts?   @relation(fields: [shift_id], references: [shift_id])
 
   @@unique([nrp, date])
   @@index([shift_id], map: "rosters_shift_id_fkey")

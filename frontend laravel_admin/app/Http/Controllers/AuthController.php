@@ -129,6 +129,36 @@ class AuthController extends Controller
         return view('auth.users', compact('users'));
     }
 
+    public function updateUserStatus(Request $request, $nrp)
+    {
+        $token = Session::get('api_token');
+        $apiUrl = env('NODE_API_URL', 'http://localhost:3000');
+
+        try {
+            $response = Http::withToken($token)->patch("{$apiUrl}/api/users/{$nrp}", [
+                'is_active' => $request->is_active
+            ]);
+
+            return response()->json($response->json(), $response->status());
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyUser($nrp)
+    {
+        $token = Session::get('api_token');
+        $apiUrl = env('NODE_API_URL', 'http://localhost:3000');
+
+        try {
+            $response = Http::withToken($token)->delete("{$apiUrl}/api/users/{$nrp}");
+
+            return response()->json($response->json(), $response->status());
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     public function logout()
     {
         Session::forget('api_token');

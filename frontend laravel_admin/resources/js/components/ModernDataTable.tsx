@@ -8,16 +8,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "./ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Checkbox } from "./ui/checkbox";
+import { cn } from "../lib/utils";
 import { Search, Columns } from "lucide-react";
 
 export type ColumnDef<T> = {
@@ -42,7 +42,7 @@ const MemoizedTableRow = React.memo(({ item, columns, visibleColumns }: { item: 
     {columns.map((col) => {
       if (!visibleColumns.includes(col.header)) return null;
       return (
-        <TableCell key={col.header} className={cn("py-3.5 px-6 text-[13px] text-slate-600 font-medium", col.className)}>
+        <TableCell key={col.header} className={cn("py-3.5 px-6 text-[13px] text-black font-bold", col.className)}>
           {col.cell ? col.cell(item) : (item[col.accessorKey as string] ?? "-")}
         </TableCell>
       );
@@ -96,12 +96,12 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
       {(title || searchPlaceholder) && !hideHeader && (
         <div className="flex flex-wrap gap-4 items-center justify-between mb-4 px-1">
           <div className="flex items-center gap-3">
-            {title && <h3 className="text-[15px] font-black text-slate-800 tracking-tight leading-none uppercase">{title}</h3>}
+            {title && <h3 className="text-[15px] font-extrabold text-black tracking-tight leading-none uppercase">{title}</h3>}
             <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black group-focus-within:text-blue-500 transition-colors" />
               <Input
                 placeholder={searchPlaceholder}
-                className="pl-9 w-72 h-10 bg-slate-50 border-slate-200 rounded-xl text-[13px] font-bold focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all placeholder:font-medium"
+                className="pl-9 w-72 h-10 bg-slate-50 border-slate-200 rounded-xl text-[13px] font-bold text-black focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all placeholder:font-medium"
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
               />
@@ -110,7 +110,7 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl border-slate-200 font-black text-[12px] text-slate-600 gap-2 hover:bg-slate-50 transition-all uppercase tracking-wider">
+              <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl border-slate-200 font-extrabold text-[12px] text-black gap-2 hover:bg-slate-50 transition-all uppercase tracking-wider">
                 <Columns className="w-4 h-4" />
                 Columns
               </Button>
@@ -136,19 +136,21 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
 
       <div className="relative w-full overflow-x-auto rounded-xl border border-slate-100 shadow-sm bg-white">
         <Table className="w-full border-collapse">
-          <TableHeader className="bg-slate-50/80 border-b-2 border-slate-100">
+          <TableHeader className="bg-slate-50/80 border-b border-slate-100 italic-none">
             <TableRow className="hover:bg-transparent border-none">
               {columns.map((col) => {
                 if (!visibleColumns.includes(col.header)) return null;
                 return (
-                  <TableHead
-                    key={col.header}
+                  <TableHead 
+                    key={col.header} 
                     className={cn(
-                      "h-12 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap",
+                      "h-12 px-6 py-4 text-[10px] font-extrabold text-black uppercase tracking-widest whitespace-nowrap italic-none",
                       col.className
                     )}
                   >
-                    {col.header}
+                    <div className="flex items-center gap-2">
+                       {col.header}
+                    </div>
                   </TableHead>
                 );
               })}
@@ -172,10 +174,10 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
                 >
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-2">
-                      <Search className="w-6 h-6 text-slate-300" />
+                      <Search className="w-6 h-6 text-black" />
                     </div>
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">No results found matching "{globalFilter}"</span>
-                    <span className="text-[10px] text-slate-300 font-bold uppercase">Try adjusting your search terms</span>
+                    <span className="text-[11px] font-extrabold text-black uppercase tracking-widest">No results found matching "{globalFilter}"</span>
+                    <span className="text-[10px] text-black font-bold uppercase">Try adjusting your search terms</span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -186,12 +188,12 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
       
       {!hideHeader && (
         <div className="pt-4 flex items-center justify-between px-2">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <p className="text-[10px] font-extrabold text-black uppercase tracking-widest">
             Total {filteredData.length} records detected
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-50">Prev</Button>
-            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-50">Next</Button>
+            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-extrabold uppercase text-black hover:bg-slate-50">Prev</Button>
+            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-extrabold uppercase text-black hover:bg-slate-50">Next</Button>
           </div>
         </div>
       )}

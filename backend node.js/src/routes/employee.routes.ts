@@ -12,6 +12,11 @@ const router = Router();
 // Menggunakan authenticateToken di semua rute karyawan
 router.use(authenticateToken);
 
+// Update foto profil (Bisa diakses semua role yang login)
+import { uploadProfile } from '../middlewares/upload.middleware';
+import { updateProfilePhoto } from '../controllers/employee.controller';
+router.post('/update-photo', uploadProfile.single('photo'), updateProfilePhoto);
+
 // Hanya admin yang bisa kelola
 router.use(authorizeRoles('admin'));
 

@@ -16,7 +16,24 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const user = await prisma.users.findUnique({
       where: { nrp },
-      include: { employee: true }
+      include: { 
+        employee: { 
+          include: { 
+            division: { include: { department: true } }, 
+            position: {
+              include: {
+                allowed_locations: {
+                  include: { location: true }
+                }
+              }
+            }, 
+            location: true,
+            allowed_locations: {
+              include: { location: true }
+            }
+          } 
+        } 
+      }
     });
 
     if (!user) {
@@ -48,7 +65,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         token: token,
         ip_address: ipAddress || 'unknown',
         user_agent: userAgent || 'unknown',
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) // Match JWT 24h
+        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // Match JWT 365d
       }
     });
 
