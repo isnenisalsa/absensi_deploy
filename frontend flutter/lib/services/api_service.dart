@@ -11,13 +11,10 @@ import '../screens/login_screen.dart';
 class ApiService {
   late Dio _dio;
 
-  // Use 10.0.2.2 for Android Emulator, 127.0.0.1 for iOS and others
-  static final String _baseUrl = Platform.isAndroid
-      ? 'http://10.0.2.2:3000/api/'
-      : 'http://127.0.0.1:3000/api/';
+  // Production Railway URL
+  static final String _baseUrl = 'https://kemungkinansatuip.up.railway.app/api/';
 
-  // SHA-256 Fingerprint dari sertifikat SSL server Anda
-  // Cara mendapatkan: openssl x509 -noout -fingerprint -sha256 -in server.crt
+  // SHA-256 Fingerprint (Optional: update this if you want to enable SSL Pinning later)
   static const String _serverFingerprint = "YOUR_SHA256_FINGERPRINT_HERE";
 
   ApiService() {
@@ -33,14 +30,14 @@ class ApiService {
       ),
     );
 
-    // [SECURITY] Implementasi SSL Pinning (Hanya aktif jika HTTPS)
+    // [SECURITY] SSL Pinning (Commented out for initial deployment testing)
+    /*
     if (_baseUrl.startsWith('https')) {
       _dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient();
           client.badCertificateCallback =
               (X509Certificate cert, String host, int port) {
-                // Verifikasi fingerprint sertifikat
                 final serverCertHash = sha256
                     .convert(cert.der)
                     .toString()
@@ -52,18 +49,15 @@ class ApiService {
                 );
 
                 if (serverCertHash == pinnedHash) {
-                  return true; // Cocok, izinkan koneksi
+                  return true;
                 }
-
-                print("❌ SECURITY ALERT: SSL Certificate Mismatch!");
-                print("Expected: $pinnedHash");
-                print("Received: $serverCertHash");
-                return false; // Tidak cocok, blokir (Burp Suite akan gagal di sini)
+                return false; 
               };
           return client;
         },
       );
     }
+    */
 
     // Jalankan pengecekan keamanan perangkat
     _checkSecurity();
