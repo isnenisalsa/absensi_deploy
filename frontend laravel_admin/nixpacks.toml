@@ -1,6 +1,6 @@
-# Nixpacks config untuk Laravel — paksa PHP 8.4 + Node 20
+# Nixpacks config untuk Laravel — paksa PHP 8.4 + Node 22
 [phases.setup]
-nixPkgs = ["php84", "php84Packages.composer", "nodejs_20", "npm-10_x"]
+nixPkgs = ["php84", "php84Packages.composer", "nodejs_22", "npm-10_x"]
 
 [phases.build]
 cmds = [
