@@ -147,7 +147,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
     });
 
     // 8. Breakdown per Mitra (Khusus Superadmin)
-    let mitraBreakdown = [];
+    let mitraBreakdown: { name: string; count: number }[] = [];
     if (!mitraId) {
         const mitrasData = await prisma.mitras.findMany({
             include: { 

@@ -41,7 +41,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     if (mitraId) {
         const targetUser = await prisma.users.findUnique({ where: { nrp } });
         if (!targetUser || targetUser.mitra_id !== mitraId) {
-            return res.status(403).json({ error: 'Anda tidak memiliki akses ke user ini' });
+            res.status(403).json({ error: 'Anda tidak memiliki akses ke user ini' });
+            return;
         }
     }
 
@@ -49,7 +50,8 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     if (role) {
         // Admin Mitra cannot change roles
         if (mitraId) {
-            return res.status(403).json({ error: 'Admin Mitra tidak diizinkan mengubah role akses' });
+            res.status(403).json({ error: 'Admin Mitra tidak diizinkan mengubah role akses' });
+            return;
         }
         updateData.role = role;
     }
