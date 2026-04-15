@@ -36,3 +36,10 @@ export const ftwReportSchema = z.object({
     status_ftw: z.string().optional(),
   })
 });
+
+export const changePasswordSchema = z.object({
+  body: z.object({
+    old_password: z.string().min(1, 'Password lama tidak boleh kosong'),
+    new_password: z.string().min(6, 'Password baru minimal 6 karakter'),
+  })
+});

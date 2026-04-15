@@ -34,6 +34,8 @@ interface ModernDataTableProps<T> {
   filterKey?: keyof T;
   title?: string;
   hideHeader?: boolean;
+  emptyActionText?: string;
+  onEmptyAction?: () => void;
 }
 
 // Memoized Table Row for performance
@@ -55,9 +57,11 @@ MemoizedTableRow.displayName = "MemoizedTableRow";
 export function ModernDataTable<T extends { id?: string | number; [key: string]: any }>({
   data,
   columns,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = "Cari...",
   title,
-  hideHeader = false
+  hideHeader = false,
+  emptyActionText,
+  onEmptyAction
 }: ModernDataTableProps<T>) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     columns.map((c) => c.header)
@@ -112,7 +116,7 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl border-slate-200 font-extrabold text-[12px] text-black gap-2 hover:bg-slate-50 transition-all uppercase tracking-wider">
                 <Columns className="w-4 h-4" />
-                Columns
+                Kolom
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl bg-white border-slate-200 shadow-2xl z-[9999]">
@@ -170,14 +174,28 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-48 text-center bg-slate-50/20"
+                  className="h-64 text-center bg-slate-50/20"
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-2">
-                      <Search className="w-6 h-6 text-black" />
+                  <div className="flex flex-col items-center justify-center py-10">
+                    <div className="w-16 h-16 bg-slate-100/50 rounded-2xl flex items-center justify-center mb-4 shadow-inner ring-1 ring-slate-200">
+                      <Search className="w-8 h-8 text-slate-300" />
                     </div>
-                    <span className="text-[11px] font-extrabold text-black uppercase tracking-widest">No results found matching "{globalFilter}"</span>
-                    <span className="text-[10px] text-black font-bold uppercase">Try adjusting your search terms</span>
+                    <span className="text-[15px] font-[900] text-slate-800 uppercase tracking-tight mb-1">
+                      Tidak ada data ditemukan
+                    </span>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 max-w-xs leading-relaxed">
+                      {globalFilter 
+                        ? `Pencarian untuk "${globalFilter}" tidak menghasilkan apapun`
+                        : "Maaf, database sedang kosong saat ini"}
+                    </p>
+                    {onEmptyAction && emptyActionText && (
+                      <button 
+                        onClick={onEmptyAction}
+                        className="px-6 py-2.5 bg-white border border-blue-100 text-blue-600 font-extrabold text-[10px] rounded-xl hover:bg-blue-50 transition-all shadow-sm uppercase tracking-widest"
+                      >
+                        {emptyActionText}
+                      </button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -192,8 +210,8 @@ export function ModernDataTable<T extends { id?: string | number; [key: string]:
             Total {filteredData.length} records detected
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-extrabold uppercase text-black hover:bg-slate-50">Prev</Button>
-            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-extrabold uppercase text-black hover:bg-slate-50">Next</Button>
+            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-extrabold uppercase text-black hover:bg-slate-50">Sebelumnya</Button>
+            <Button variant="outline" size="sm" className="h-8 rounded-lg border-slate-200 text-[10px] font-extrabold uppercase text-black hover:bg-slate-50">Selanjutnya</Button>
           </div>
         </div>
       )}

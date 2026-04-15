@@ -19,7 +19,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       include: { 
         employee: { 
           include: { 
-            division: { include: { department: true } }, 
+            division: { include: { departments: { include: { department: true } } } }, 
             position: {
               include: {
                 allowed_locations: {
@@ -58,6 +58,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       mitra_id: user.mitra_id 
     });
 
+    const lastSession = await prisma.user_sessions.findFirst({
+      where: { nrp: user.nrp },
+      orderBy: { created_at: 'desc' }
+    });
+
+    const lastLoginAt = lastSession ? lastSession.created_at : new Date();
+
     // Store Session in Database
     await prisma.user_sessions.create({
       data: {
@@ -76,7 +83,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         nrp: user.nrp,
         role: user.role,
         mitra_id: user.mitra_id,
-        employee_data: user.employee
+        employee_data: user.employee,
+        last_login: lastLoginAt
       }
     });
 
@@ -103,5 +111,44 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({ error: 'Gagal melakukan logout.' });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { old_password, new_password } = req.body;
+    const nrp = req.user?.nrp;
+
+    if (!nrp) {
+      res.status(401).json({ error: 'User tidak terautentikasi.' });
+      return;
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { nrp }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'User tidak ditemukan.' });
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(old_password, user.password_hash);
+    if (!isMatch) {
+      res.status(400).json({ error: 'Password lama yang Anda masukkan salah.' });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    await prisma.users.update({
+      where: { nrp },
+      data: { password_hash: hashedPassword }
+    });
+
+    res.status(200).json({ message: 'Password berhasil diperbarui.' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Gagal memperbarui password. Silakan coba lagi.' });
   }
 };

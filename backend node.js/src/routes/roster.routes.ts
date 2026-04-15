@@ -5,7 +5,7 @@ import { authenticateToken, authorizeRoles } from '../middlewares/auth.middlewar
 const router = Router();
 
 router.use(authenticateToken); 
-router.use(authorizeRoles('admin', 'employee', 'safety', 'csr'));
+router.use(authorizeRoles('admin', 'admin_mitra', 'employee'));
 
 router.get('/', getRosters);
 router.post('/', createRoster);

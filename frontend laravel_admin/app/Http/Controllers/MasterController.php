@@ -68,6 +68,21 @@ class MasterController extends Controller
         return redirect()->back()->withErrors(['error' => 'Gagal menghapus shift: ' . $response->body()]);
     }
 
+    public function bulkDestroyShifts(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (!$ids || !is_array($ids)) {
+            return redirect()->back()->withErrors(['error' => 'Tidak ada shift yang dipilih.']);
+        }
+
+        $response = Http::withHeaders($this->getHeaders())->delete("{$this->baseUrl}/shifts/bulk", ['ids' => $ids]);
+        return $response->successful() 
+            ? redirect()->back()->with('success', count($ids) . ' Shift berhasil dihapus sekaligus!')
+            : redirect()->back()->withErrors(['error' => 'Gagal menghapus shift massal: ' . ($response->json()['error'] ?? $response->body())]);
+    }
+
+
+
     // ==========================================
     // DEPARTMENTS
     // ==========================================
@@ -121,21 +136,7 @@ class MasterController extends Controller
             : redirect()->back()->withErrors(['error' => 'Gagal menghapus departemen massal: ' . $response->body()]);
     }
 
-    public function importDepartments(Request $request)
-    {
-        if (!$request->hasFile('file')) {
-            return redirect()->back()->withErrors(['error' => 'Pilih file Excel terlebih dahulu.']);
-        }
 
-        $file = $request->file('file');
-        $response = Http::withHeaders($this->getHeaders())
-            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-            ->post("{$this->baseUrl}/departments/import");
-
-        return $response->successful() 
-            ? redirect()->back()->with('success', $response->json()['message'] ?? 'Import departemen berhasil!')
-            : redirect()->back()->withErrors(['error' => 'Gagal impor departemen: ' . ($response->json()['error'] ?? $response->body())]);
-    }
 
     public function divisions()
     {
@@ -188,28 +189,7 @@ class MasterController extends Controller
             : redirect()->back()->withErrors(['error' => 'Gagal menghapus divisi massal: ' . $response->body()]);
     }
 
-    public function importDivisions(Request $request)
-    {
-        if (!$request->hasFile('file')) {
-            return redirect()->back()->withErrors(['error' => 'Pilih file Excel terlebih dahulu.']);
-        }
 
-        $file = $request->file('file');
-        $url = "{$this->baseUrl}/divisions/import";
-        \Log::info("Attempting Import Divisions to URL: " . $url);
-
-        $response = Http::withHeaders($this->getHeaders())
-            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-            ->post($url);
-        
-        if (!$response->successful()) {
-            \Log::error("Import Divisions FAILED. Status: " . $response->status() . " Body: " . $response->body());
-        }
-
-        return $response->successful() 
-            ? redirect()->back()->with('success', $response->json()['message'] ?? 'Import divisi berhasil!')
-            : redirect()->back()->withErrors(['error' => 'Gagal impor divisi: ' . ($response->json()['error'] ?? $response->body())]);
-    }
 
     // ==========================================
     // POSITIONS
@@ -220,8 +200,11 @@ class MasterController extends Controller
         
         $response = Http::withHeaders($this->getHeaders())->get("{$this->baseUrl}/positions");
         $positions = $response->successful() ? $response->json() : [];
+
+        $resLocs = Http::withHeaders($this->getHeaders())->get("{$this->baseUrl}/locations");
+        $locations = $resLocs->successful() ? $resLocs->json() : [];
         
-        return view('master.positions', compact('positions'));
+        return view('master.positions', compact('positions', 'locations'));
     }
 
     public function storePosition(Request $request)
@@ -267,25 +250,7 @@ class MasterController extends Controller
         return redirect()->back()->withErrors(['error' => 'Gagal menghapus jabatan terpilih: ' . $response->body()]);
     }
 
-    public function importPositions(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
-        ]);
 
-        $file = $request->file('file');
-        
-        $response = Http::withHeaders($this->getHeaders())
-            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
-            ->post("{$this->baseUrl}/positions/import");
-
-        if ($response->successful()) {
-            return redirect()->back()->with('success', $response->json()['message'] ?? 'Import berhasil!');
-        }
-
-        $error = $response->json()['error'] ?? 'Gagal mengimpor data';
-        return redirect()->back()->withErrors(['error' => $error]);
-    }
 
 
 

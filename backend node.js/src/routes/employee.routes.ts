@@ -17,8 +17,8 @@ import { uploadProfile } from '../middlewares/upload.middleware';
 import { updateProfilePhoto } from '../controllers/employee.controller';
 router.post('/update-photo', uploadProfile.single('photo'), updateProfilePhoto);
 
-// Hanya admin yang bisa kelola
-router.use(authorizeRoles('admin'));
+// Hanya admin yang bisa kelola Karyawan
+router.use(authorizeRoles('admin', 'admin_mitra'));
 
 router.get('/', getEmployees);
 router.post('/', createEmployee);

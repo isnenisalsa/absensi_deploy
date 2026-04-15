@@ -19,6 +19,17 @@ import statsRoutes from './routes/stats.routes';
 
 const app = express();
 
+// --- [GLOBAL DIAGNOSIS] Lihat semua request yang masuk ---
+app.use((req, res, next) => {
+    console.log(`\n--- [INCOMING REQUEST] ${new Date().toLocaleTimeString()} ---`);
+    console.log(`Method: ${req.method}`);
+    console.log(`Path: ${req.path}`);
+    console.log(`URL: ${req.originalUrl}`);
+    console.log(`Headers:`, JSON.stringify(req.headers, null, 2));
+    console.log('-------------------------------------------\n');
+    next();
+});
+
 // Konfigurasi Rate Limiter Global (Batasan 100 hit per 15 menit)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -54,13 +65,15 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '10kb' })); // Batasi payload JSON untuk cegah DoS
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '15mb' })); // Ditingkatkan untuk support upload foto
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(hpp()); // Mencegah HTTP Parameter Pollution (?id=1&id=2)
 app.use(limiter); // Pasang limiter ke seluruh network
 
 // Serve static files for uploads
 app.use('/uploads', express.static('uploads'));
+app.use('/uploads/profiles', express.static('uploads/profiles'));
+app.use('/uploads/attendance', express.static('uploads/attendance'));
 
 // Rute Basic Cek Server
 app.get('/', (req, res) => {
@@ -80,13 +93,13 @@ app.use('/api/stats', statsRoutes);
 // Penanganan Route NotFound
 app.use((req, res, next) => {
   console.log(`❌ 404 Error: Endpoint tidak ditemukan untuk request: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ error: 'Endpoint tidak ditemukan' });
+  res.status(404).json({ error: `[DEBUG-404] Rute Tidak Ditemukan: ${req.method} ${req.originalUrl}` });
 });
 
 // Error handling mask 
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001; // PINDAH KE 3001
 app.listen(PORT, () => {
-  console.log(`🚀 Server API berjalan di http://localhost:${PORT}`);
+  console.log(`🚀 [DIAGNOSIS PRO] Server API berjalan di http://localhost:${PORT}`);
 });

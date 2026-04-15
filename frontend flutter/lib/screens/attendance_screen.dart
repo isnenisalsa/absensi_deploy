@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -8,6 +9,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:frontend_flutter/constants.dart';
 import '../services/auth_service.dart';
 import '../services/attendance_service.dart';
+import 'camera_capture_screen.dart';
+import 'attendance_history_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   final Function(String?, bool, bool, {VoidCallback? onBack})? onLayoutChange;
@@ -529,8 +532,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         return;
       }
 
-      // Removed old end-of-survey geofence check
-      
+      // ── STEP KAMERA: Ambil foto sebelum check-in ─────────────────
+      setState(() => _isLoading = false); // Matikan spinner saat buka kamera
+      final File? photo = await Navigator.push<File?>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const CameraCaptureScreen(
+            title: "Foto Bukti Check-In",
+            subtitle: "Ambil foto wajah Anda untuk bukti absensi masuk",
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      if (photo == null) {
+        // User membatalkan kamera
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Foto dibatalkan. Silakan ambil foto untuk melanjutkan."), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      setState(() => _isLoading = true);
+
+      // Upload foto ke backend
+      final photoFilename = await attendanceService.uploadAttendancePhoto(photo);
+      if (!mounted) return;
+      if (photoFilename == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal mengupload foto. Silakan coba lagi."), backgroundColor: Colors.red),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+      print("📷 [Check-In] Foto diupload: $photoFilename");
+      // ─────────────────────────────────────────────────────────────
+
       // Dynamic Shift Lookup: If roster is missing (common for testing/admins), fetch the first available shift
       int finalShiftId = 1;
       if (_todayStatus?['roster']?['shift_id'] != null) {
@@ -554,7 +590,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         "location_id": _selectedLocationData?['location_id'],
         "cp_location": "SBT",
         "work_location": _selectedLocationData?['location_name'] ?? "-",
-        "photo_url": "https://pama.com/dummy.jpg"
+        "photo_url": photoFilename, // Filename dari server
       };
 
       final checkInResult = await attendanceService.checkIn(checkInData);
@@ -570,7 +606,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         });
       } else {
         if (!mounted) return;
-         // Show error from backend if possible
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Gagal melakukan Check-In. Kemungkinan Roster Anda belum terdaftar atau Shift tidak ditemukan."),
@@ -1073,52 +1108,101 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _showCheckOutConfirmation() async {
-     setState(() => _isSearchingLocation = true);
-     final freshPos = await _getCurrentGPS();
-     if (freshPos == null) {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal mendapatkan lokasi GPS. Pastikan GPS aktif.")));
-       setState(() => _isSearchingLocation = false);
-       return;
-     }
+    setState(() => _isSearchingLocation = true);
+    final freshPos = await _getCurrentGPS();
+    if (freshPos == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal mendapatkan lokasi GPS. Pastikan GPS aktif.")));
+      setState(() => _isSearchingLocation = false);
+      return;
+    }
 
-     if (_selectedLocationData != null && !_isInsideGeofence(freshPos, _selectedLocationData!)) {
-       _showOutsideGeofencePopup(freshPos, _selectedLocationData!);
-       setState(() => _isSearchingLocation = false);
-       return;
-     }
-     setState(() => _isSearchingLocation = false);
+    if (_selectedLocationData != null && !_isInsideGeofence(freshPos, _selectedLocationData!)) {
+      _showOutsideGeofencePopup(freshPos, _selectedLocationData!);
+      setState(() => _isSearchingLocation = false);
+      return;
+    }
+    setState(() => _isSearchingLocation = false);
 
-     _showGlassDialog(AlertDialog(
-       title: const Text("Konfirmasi Check-Out"), 
-       content: const Text("Apakah Anda yakin ingin melakukan Check-Out sekarang?"), 
-       actions: [
-         TextButton(onPressed: () => Navigator.pop(context), child: const Text("BATAL")), 
-         TextButton(
-           onPressed: () async { 
-             Navigator.pop(context); 
-             setState(() => _isLoading = true);
-             
-             final checkOutData = {
-               "lat": freshPos.latitude,
-               "long": freshPos.longitude,
-               "location_id": _selectedLocationData?['location_id'],
-               "photo_url": "https://pama.com/dummy_checkout.jpg"
-             };
+    // Tampilkan konfirmasi dulu
+    final confirmed = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (context, anim1, anim2) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Konfirmasi Check-Out", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("Setelah konfirmasi, Anda akan diminta mengambil foto bukti check-out."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("BATAL")),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9500), foregroundColor: Colors.white),
+            child: const Text("LANJUT & FOTO"),
+          ),
+        ],
+      ),
+      transitionBuilder: (context, anim1, anim2, child) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10.0 * anim1.value, sigmaY: 10.0 * anim1.value),
+        child: FadeTransition(opacity: anim1, child: child),
+      ),
+    );
 
-             final result = await attendanceService.checkOut(checkOutData);
-             if (result != null) {
-               _showSuccessPopup("Check-Out Berhasil!", "Sampai jumpa besok! Shift Anda telah selesai.", () {
-                  _loadUser(); // Refresh UI status
-               });
-             } else {
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal melakukan Check-Out.")));
-             }
-             setState(() => _isLoading = false);
-           }, 
-           child: const Text("CHECK OUT")
-         )
-       ]
-      ));
+    if (confirmed != true || !mounted) return;
+
+    // ── STEP KAMERA: Ambil foto sebelum check-out ─────────────────
+    final File? photo = await Navigator.push<File?>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CameraCaptureScreen(
+          title: "Foto Bukti Check-Out",
+          subtitle: "Ambil foto wajah Anda untuk bukti absensi keluar",
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    if (photo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Foto dibatalkan. Check-out tidak dilakukan."), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+
+    // Upload foto ke backend
+    final photoFilename = await attendanceService.uploadAttendancePhoto(photo);
+    if (!mounted) return;
+    if (photoFilename == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal mengupload foto. Silakan coba lagi."), backgroundColor: Colors.red),
+      );
+      setState(() => _isLoading = false);
+      return;
+    }
+    print("📷 [Check-Out] Foto diupload: $photoFilename");
+    // ─────────────────────────────────────────────────────────────
+
+    final checkOutData = {
+      "lat": freshPos.latitude,
+      "long": freshPos.longitude,
+      "location_id": _selectedLocationData?['location_id'],
+      "photo_url": photoFilename, // Filename dari server
+    };
+
+    final result = await attendanceService.checkOut(checkOutData);
+    if (!mounted) return;
+    if (result != null) {
+      _showSuccessPopup("Check-Out Berhasil!", "Sampai jumpa besok! Shift Anda telah selesai.", () {
+        _loadUser();
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal melakukan Check-Out."), backgroundColor: Colors.red),
+      );
+    }
+    setState(() => _isLoading = false);
   }
 
   void _showDirectCheckOutWarning() {

@@ -1,6 +1,38 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/db';
 import { calculateDistance, isPointInPolygon, parsePolygonCoords } from '../utils/geolocation';
+import path from 'path';
+import fs from 'fs';
+
+// ─────────────────────────────────────────────────────────────────
+// Upload Foto Bukti Absensi (Camera Only — no gallery)
+// POST /api/attendance/upload-photo (multipart/form-data, field: photo)
+// ─────────────────────────────────────────────────────────────────
+export const uploadAttendancePhotoController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: 'Tidak ada file foto yang dikirim.' });
+      return;
+    }
+
+    // Return URL-friendly path so Flutter can store & reference later
+    const filename = file.filename;
+    const fileUrl = `/uploads/attendance/${filename}`;
+
+    res.status(200).json({ 
+      message: 'Foto berhasil diupload.',
+      filename,
+      url: fileUrl
+    });
+  } catch (error) {
+    console.error('Upload photo error:', error);
+    res.status(500).json({ 
+      error: 'Gagal mengupload foto.', 
+      details: error instanceof Error ? error.message : String(error) 
+    });
+  }
+};
 
 export const checkIn = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -313,7 +345,7 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
             if (dept && dept !== 'ALL') {
                 whereClause.employee = { 
                     ...whereClause.employee, 
-                    division: { dept_id: Number(dept) } 
+                    dept_id: Number(dept)
                 };
             }
             if (lokasi && lokasi !== 'ALL') {
@@ -330,9 +362,8 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
                     include: {
                         location: true,
                         position: true,
-                        division: {
-                            include: { department: true }
-                        },
+                        department: true,
+                        division: true,
                     }
                 }
             }
@@ -484,7 +515,7 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
             include: { 
                 employee: {
                   include: {
-                    division: { include: { department: true } },
+                    division: { include: { departments: { include: { department: true } } } },
                     position: true,
                     location: true
                   }

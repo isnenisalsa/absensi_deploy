@@ -43,9 +43,15 @@
         </div>
 
         @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
-        <button type="button" onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
-            <i class="fa-solid fa-plus text-sm"></i> Tambah Shift Baru
-        </button>
+        <div class="flex items-center gap-3">
+             <button id="btnBulkDelete" type="button" onclick="openBulkDeleteModal()" class="hidden px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-extrabold text-[12px] rounded-xl shadow-sm transition-all uppercase tracking-widest flex items-center justify-center gap-2 border border-red-200 animate-fade-in">
+                <i class="fa-solid fa-trash-can text-sm"></i> HAPUS TERPILIH (<span id="selectedCount">0</span>)
+            </button>
+
+            <button type="button" onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus text-sm"></i> TAMBAH SHIFT
+            </button>
+        </div>
         @endif
     </div>
 
@@ -72,7 +78,10 @@
             <table class="w-full text-left" id="shiftTable">
                 <thead>
                     <tr class="bg-slate-50/80 border-b border-slate-100">
-                        <th class="px-8 py-4 w-20 text-center text-[10px] font-extrabold text-black uppercase tracking-widest">No</th>
+                        <th class="px-5 py-4 w-10 text-center">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        </th>
+                        <th class="px-5 py-4 w-20 text-center text-[10px] font-extrabold text-black uppercase tracking-widest">No</th>
                         <th class="px-6 py-4 text-[10px] font-extrabold text-black uppercase tracking-widest">Kode Shift</th>
                         <th class="px-6 py-4 text-[10px] font-extrabold text-black uppercase tracking-widest">Jam Masuk</th>
                         <th class="px-6 py-4 text-[10px] font-extrabold text-black uppercase tracking-widest">Jam Pulang</th>
@@ -88,7 +97,10 @@
                         $isNight = $shift['date_out'] != $shift['date_in'];
                     @endphp
                     <tr class="row-data group">
-                        <td class="px-8 py-5 text-center font-bold text-slate-400 text-[13px] italic-none">{{ $loop->iteration }}</td>
+                        <td class="px-5 py-5 text-center">
+                            <input type="checkbox" name="ids[]" value="{{ $shift['shift_id'] }}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        </td>
+                        <td class="px-5 py-5 text-center font-bold text-slate-400 text-[13px] italic-none">{{ $loop->iteration }}</td>
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-black font-black text-[11px]">
@@ -141,7 +153,7 @@
                                 <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-200">
                                     <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
                                 </div>
-                                <p class="text-slate-400 font-bold text-[14px]">Belum ada data shift yang ditambahkan.</p>
+                                <p class="text-slate-400 font-bold text-[14px]">Tidak ada data yang ditemukan</p>
                                 <button onclick="openCreateModal()" class="mt-4 text-blue-600 font-black text-xs hover:underline uppercase tracking-widest">Tambah Shift Sekarang</button>
                             </div>
                         </td>
@@ -224,6 +236,35 @@
     </div>
 </div>
 
+<!-- Modal Bulk Delete Confirmation -->
+<div id="bulkDeleteModalContainer" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeBulkDeleteModal()"></div>
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4 p-8 flex flex-col items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-6">
+            <i class="fa-solid fa-triangle-exclamation text-[32px]"></i>
+        </div>
+        <h3 class="text-xl font-[900] text-slate-800 mb-2">Hapus Terpilih?</h3>
+        <p class="text-slate-500 text-sm font-medium mb-8 leading-relaxed">
+            Apakah Anda yakin ingin menghapus <span id="bulkCountDisplay" class="text-red-600 font-extrabold"></span> shift yang dipilih secara permanen?
+        </p>
+        <div class="flex w-full gap-3">
+            <button onclick="closeBulkDeleteModal()" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold text-xs rounded-xl transition-all uppercase tracking-widest">
+                BATAL
+            </button>
+            <form id="bulkDeleteForm" method="POST" action="{{ route('master.shifts.bulk-destroy') }}" class="flex-1">
+                @csrf
+                @method('DELETE')
+                <div id="selectedIdsInputs"></div>
+                <button type="submit" class="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-red-500/20 uppercase tracking-widest">
+                    YA, HAPUS
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
 @push('scripts')
 <script>
     const form = document.getElementById('shiftForm');
@@ -241,6 +282,66 @@
     function closeShiftModal() {
         modal.classList.add('hidden');
     }
+
+    // --- Bulk Delete & Import Logic ---
+    const selectAll = document.getElementById('selectAll');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const btnBulkDelete = document.getElementById('btnBulkDelete');
+    const selectedCount = document.getElementById('selectedCount');
+    const bulkDeleteModalContainer = document.getElementById('bulkDeleteModalContainer');
+    const bulkCountDisplay = document.getElementById('bulkCountDisplay');
+    const selectedIdsInputs = document.getElementById('selectedIdsInputs');
+    const importModalContainer = document.getElementById('importModalContainer');
+
+    function updateBulkButton() {
+        const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+        if (checkedCount > 0) {
+            btnBulkDelete.classList.remove('hidden');
+            selectedCount.innerText = checkedCount;
+        } else {
+            btnBulkDelete.classList.add('hidden');
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            rowCheckboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            updateBulkButton();
+        });
+    }
+
+    rowCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkButton);
+    });
+
+    function openBulkDeleteModal() {
+        const checkedIds = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+        bulkCountDisplay.innerText = checkedIds.length;
+        selectedIdsInputs.innerHTML = '';
+        checkedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids[]';
+            input.value = id;
+            selectedIdsInputs.appendChild(input);
+        });
+        bulkDeleteModalContainer.classList.remove('hidden');
+    }
+
+    function closeBulkDeleteModal() {
+        bulkDeleteModalContainer.classList.add('hidden');
+    }
+
+
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeShiftModal();
+            closeBulkDeleteModal();
+        }
+    });
 
     function editShift(shift) {
         document.getElementById('modalTitle').innerText = `Edit: ${shift.shift_code}`;

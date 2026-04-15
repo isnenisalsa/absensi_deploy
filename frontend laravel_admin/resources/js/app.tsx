@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div className="w-full h-64 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                <span className="text-[10px] text-slate-400 font-black tracking-widest uppercase">Hydrating Component...</span>
+                <span className="text-[10px] text-slate-400 font-black tracking-widest uppercase">Memuat Komponen...</span>
               </div>
             </div>
           }>

@@ -61,4 +61,36 @@ class MasterMitraController extends Controller
 
         return redirect()->back()->withErrors(['error' => $response->json()['error'] ?? 'Gagal menghapus mitra']);
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (!$ids || !is_array($ids)) {
+            return redirect()->back()->withErrors(['error' => 'Tidak ada mitra yang dipilih.']);
+        }
+
+        $token = Session::get('api_token');
+        $response = Http::withToken($token)->delete("http://localhost:3000/api/master/mitras/bulk", ['ids' => $ids]);
+
+        return $response->successful() 
+            ? redirect()->back()->with('success', count($ids) . ' Mitra berhasil dihapus sekaligus!')
+            : redirect()->back()->withErrors(['error' => 'Gagal menghapus mitra massal: ' . ($response->json()['error'] ?? $response->body())]);
+    }
+
+    public function import(Request $request)
+    {
+        if (!$request->hasFile('file')) {
+            return redirect()->back()->withErrors(['error' => 'Pilih file Excel terlebih dahulu.']);
+        }
+
+        $file = $request->file('file');
+        $token = Session::get('api_token');
+        $response = Http::withToken($token)
+            ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
+            ->post("http://localhost:3000/api/master/mitras/import");
+
+        return $response->successful() 
+            ? redirect()->back()->with('success', $response->json()['message'] ?? 'Import mitra berhasil!')
+            : redirect()->back()->withErrors(['error' => 'Gagal impor mitra: ' . ($response->json()['error'] ?? $response->body())]);
+    }
 }

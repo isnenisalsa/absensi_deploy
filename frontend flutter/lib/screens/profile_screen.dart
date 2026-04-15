@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 
@@ -208,6 +209,211 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _handleChangePassword() async {
+    final TextEditingController oldPassController = TextEditingController();
+    final TextEditingController newPassController = TextEditingController();
+    final TextEditingController confirmPassController = TextEditingController();
+    bool isSaving = false;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (dialogContext, anim1, anim2) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white.withValues(alpha: 0.9),
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Text(
+                "Ganti Password",
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPasswordField(oldPassController, "Password Lama"),
+                    const SizedBox(height: 12),
+                    _buildPasswordField(newPassController, "Password Baru"),
+                    const SizedBox(height: 12),
+                    _buildPasswordField(
+                      confirmPassController,
+                      "Konfirmasi Password Baru",
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    "Batal",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      isSaving
+                          ? null
+                          : () async {
+                            final oldP = oldPassController.text.trim();
+                            final newP = newPassController.text.trim();
+                            final confirmP = confirmPassController.text.trim();
+
+                            if (oldP.isEmpty ||
+                                newP.isEmpty ||
+                                confirmP.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Semua field harus diisi"),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (newP != confirmP) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Konfirmasi password tidak cocok",
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (newP.length < 6) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Password baru minimal 6 karakter",
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            setDialogState(() => isSaving = true);
+                            try {
+                              await authService.changePassword(oldP, newP);
+                              if (mounted) {
+                                Navigator.pop(dialogContext);
+                                ScaffoldMessenger.of(this.context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Password berhasil diganti"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              String errorMsg = "Terjadi kesalahan";
+                              if (e is DioException &&
+                                  e.response?.data != null) {
+                                errorMsg =
+                                    e.response?.data['error'] ?? errorMsg;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errorMsg),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } finally {
+                              setDialogState(() => isSaving = false);
+                            }
+                          },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                  ),
+                  child:
+                      isSaving
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text(
+                            "Simpan",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: 10 * anim1.value,
+            sigmaY: 10 * anim1.value,
+          ),
+          child: FadeTransition(
+            opacity: anim1,
+            child: ScaleTransition(
+              scale: anim1.drive(Tween(begin: 0.95, end: 1.0)),
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPasswordField(TextEditingController controller, String label) {
+    return TextField(
+      controller: controller,
+      obscureText: true,
+      style: const TextStyle(fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade600,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.blue, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        fillColor: Colors.grey.shade50,
+        filled: true,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Extract nested data for cleaner access
@@ -258,6 +464,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label: "Email Notifikasi",
               value: _emailNotifications,
               onChanged: (v) => setState(() => _emailNotifications = v),
+            ),
+            const Divider(height: 1, indent: 20, endIndent: 20),
+            _buildActionTile(
+              icon: FontAwesomeIcons.lock,
+              label: "Ganti Password",
+              onTap: _handleChangePassword,
             ),
           ]),
 
@@ -535,6 +747,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required dynamic icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Row(
+          children: [
+            FaIcon(icon, size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,10 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/auth_service.dart';
 import '../services/attendance_service.dart';
 import 'package:intl/intl.dart';
 import 'shift_detail_screen.dart';
-import 'shift_history_screen.dart';
+import 'attendance_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -17,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _todayStatus;
+  List<dynamic> _recentHistory = [];
   final String _currentDate = DateFormat("EEEE, d MMMM yyyy", "id_ID").format(DateTime.now());
 
   @override
@@ -28,11 +30,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUser() async {
     final data = await authService.getUserData();
     final today = await attendanceService.getTodayStatus();
+    final history = await attendanceService.getAttendanceHistory();
     
     if (mounted) {
       setState(() {
         _userData = data;
         _todayStatus = today;
+        // Ambil 3 record terbaru untuk preview di home
+        _recentHistory = history.take(3).toList();
       });
     }
   }
@@ -381,15 +386,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ShiftHistoryScreen()),
+                    MaterialPageRoute(builder: (context) => const AttendanceHistoryScreen()),
                   );
                 },
-                child: Text(
+                child: const Text(
                   "LIHAT SEMUA",
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF007AFF),
+                    color: Color(0xFF007AFF),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -398,22 +403,44 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
 
-          // 6. HISTORY LIST
-          _buildHistoryItem(
-            title: "Check - In Gagal",
-            date: "Kamis, 26 Maret 2026 • 10:15 WITA",
-            statusLabel: "GAGAL",
-            isSuccess: false,
-            iconWidget: const FaIcon(FontAwesomeIcons.triangleExclamation, color: Colors.white, size: 20),
-          ),
-          const SizedBox(height: 16),
-          _buildHistoryItem(
-            title: "Check - Out Kemarin",
-            date: "Kamis, 26 Maret 2026 • 17:15 WITA",
-            statusLabel: "SUKSES",
-            isSuccess: true,
-            iconWidget: const FaIcon(FontAwesomeIcons.clockRotateLeft, color: Colors.white, size: 20),
-          ),
+          // 6. HISTORY LIST — Real data dari API
+          if (_recentHistory.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              alignment: Alignment.center,
+              child: Text(
+                "Belum ada riwayat absensi",
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+              ),
+            )
+          else
+            ..._recentHistory.map((item) {
+              final isCheckIn = item['trans_type'] == 'Check_in';
+              final hasPhoto = item['photo_evidence'] != null &&
+                  item['photo_evidence'].toString().isNotEmpty &&
+                  !item['photo_evidence'].toString().contains('dummy');
+              final time = _formatHistoryTime(item['time_wita']);
+              final date = _formatHistoryDate(item['attendance_date']);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()),
+                  ),
+                  child: _buildRealHistoryItem(
+                    isCheckIn: isCheckIn,
+                    time: time,
+                    date: date,
+                    location: item['work_location'] ?? '-',
+                    hasPhoto: hasPhoto,
+                    photoUrl: hasPhoto
+                        ? _getPhotoUrl(item['photo_evidence'])
+                        : null,
+                  ),
+                ),
+              );
+            }),
 
           const SizedBox(height: 120), // Bottom Breathing Space (Aman dari Blurred Footer)
         ],
@@ -421,78 +448,132 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget Builder Cepat untuk Item Riwayat Kehadiran
-  Widget _buildHistoryItem({
-    required String title,
+  // ─── Helper: Real history card ───────────────────────────────────────────
+  Widget _buildRealHistoryItem({
+    required bool isCheckIn,
+    required String time,
     required String date,
-    required String statusLabel,
-    required bool isSuccess,
-    required Widget iconWidget,
+    required String location,
+    required bool hasPhoto,
+    String? photoUrl,
   }) {
-    final Color mainColor = isSuccess ? const Color(0xFF34C759) : const Color(0xFFFF3B30);
+    final color = isCheckIn ? const Color(0xFF007AFF) : const Color(0xFFFF9500);
+    final label = isCheckIn ? "CHECK-IN" : "CHECK-OUT";
+    final icon = isCheckIn ? Icons.login_rounded : Icons.logout_rounded;
 
-    return Row(
-      children: [
-        // Prefix Icon Box
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: mainColor,
-            borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Center(
-            child: iconWidget,
-          ),
-        ),
-        const SizedBox(width: 16),
-        // Texts
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                date,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 10,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Trailing Marker
-        Row(
-          children: [
-            Text(
-              statusLabel,
-              style: TextStyle(
-                color: mainColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-                letterSpacing: 0.5,
-              ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Foto thumbnail atau icon
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.1),
             ),
-            const SizedBox(width: 4),
-            FaIcon(
-              FontAwesomeIcons.angleRight,
-              color: mainColor,
-              size: 14,
+            clipBehavior: Clip.antiAlias,
+            child: hasPhoto && photoUrl != null
+                ? Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(icon, color: color, size: 22),
+                  )
+                : Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                    if (hasPhoto) ...[  
+                      const SizedBox(width: 6),
+                      Icon(Icons.camera_alt_rounded, size: 11, color: Colors.green.shade500),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                    color: color,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  "$date · $location",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ],
-        )
-      ],
+          ),
+          Icon(Icons.chevron_right_rounded, color: Colors.grey.shade300, size: 20),
+        ],
+      ),
     );
+  }
+
+  String _formatHistoryTime(String? raw) {
+    if (raw == null) return '--:--';
+    try {
+      return DateFormat('HH:mm').format(DateTime.parse(raw));
+    } catch (_) {
+      if (raw.contains('T')) return raw.split('T')[1].substring(0, 5);
+      return raw.substring(0, 5);
+    }
+  }
+
+  String _formatHistoryDate(String? raw) {
+    if (raw == null) return '-';
+    try {
+      return DateFormat('EEE, dd MMM', 'id').format(DateTime.parse(raw));
+    } catch (_) {
+      return raw.split('T')[0];
+    }
+  }
+
+  String _getPhotoUrl(String? filename) {
+    if (filename == null) return '';
+    if (filename.startsWith('http')) return filename;
+    final base = Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://127.0.0.1:3000';
+    return '$base/uploads/attendance/$filename';
   }
 
   String _getDisplayStatus() {

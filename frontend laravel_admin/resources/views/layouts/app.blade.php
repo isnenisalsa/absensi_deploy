@@ -157,40 +157,42 @@
                     <div class="h-6 flex items-center px-4 overflow-hidden section-label transition-opacity duration-300">
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analytics</span>
                     </div>
-                    <div class="flex flex-col">
+
                         <!-- Reports Main -->
-                        <button onclick="toggleReportMenu()" class="sidebar-item w-full flex items-center h-12 rounded-xl transition-all duration-300 {{ request()->is('report/*') ? 'bg-blue-50 text-[#0052cc]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
-                            <div class="w-14 h-12 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-chart-pie text-[16px]"></i>
-                            </div>
-                            <span class="text-[13px] font-bold whitespace-nowrap nav-label flex-1 text-left transition-opacity duration-300">Reports</span>
-                            <div class="w-10 flex items-center justify-center nav-label transition-opacity duration-300">
-                                <i id="reportChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 {{ request()->is('report/*') ? 'rotate-180' : '' }}"></i>
-                            </div>
-                            <div class="tooltip absolute left-full ml-3 px-2 py-1.5 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-all">Reports</div>
-                        </button>
-                        <div id="reportSubMenu" class="transition-all duration-300 ease-in-out {{ request()->is('report/*') ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0' }} grid overflow-hidden">
-                            <div class="overflow-hidden flex flex-col gap-0.5 pl-14">
-                                <a href="{{ route('report.history') }}" class="flex items-center h-10 rounded-xl transition-all duration-300 {{ request()->routeIs('report.history') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
-                                    <i class="fa-solid fa-clock-rotate-left text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold whitespace-nowrap">Riwayat Absensi</span>
-                                </a>
-                                <a href="{{ route('report.ftw') }}" class="flex items-center h-10 rounded-xl transition-all duration-300 {{ request()->routeIs('report.ftw') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
-                                    <i class="fa-solid fa-heart-pulse text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold whitespace-nowrap">Fit To Work (FTW)</span>
-                                </a>
+                        <div class="flex flex-col">
+                            <button onclick="toggleReportMenu()" class="sidebar-item w-full flex items-center h-12 rounded-xl transition-all duration-300 {{ request()->is('report/*') ? 'bg-blue-50 text-[#0052cc]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                                <div class="w-14 h-12 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-chart-pie text-[16px]"></i>
+                                </div>
+                                <span class="text-[13px] font-bold whitespace-nowrap nav-label flex-1 text-left transition-opacity duration-300">Reports</span>
+                                <div class="w-10 flex items-center justify-center nav-label transition-opacity duration-300">
+                                    <i id="reportChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300 {{ request()->is('report/*') ? 'rotate-180' : '' }}"></i>
+                                </div>
+                                <div class="tooltip absolute left-full ml-3 px-2 py-1.5 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-all">Reports</div>
+                            </button>
+                            <div id="reportSubMenu" class="transition-all duration-300 ease-in-out {{ request()->is('report/*') ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0' }} grid overflow-hidden">
+                                <div class="overflow-hidden flex flex-col gap-0.5 pl-14">
+                                    <a href="{{ route('report.history') }}" class="flex items-center h-10 rounded-xl transition-all duration-300 {{ request()->routeIs('report.history') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
+                                        <i class="fa-solid fa-clock-rotate-left text-[12px] mr-2"></i>
+                                        <span class="text-[12px] font-bold whitespace-nowrap">Riwayat Absensi</span>
+                                    </a>
+                                    <a href="{{ route('report.ftw') }}" class="flex items-center h-10 rounded-xl transition-all duration-300 {{ request()->routeIs('report.ftw') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
+                                        <i class="fa-solid fa-heart-pulse text-[12px] mr-2"></i>
+                                        <span class="text-[12px] font-bold whitespace-nowrap">Fit To Work (FTW)</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Roster Kerja -->
-                        <a href="{{ route('rosters.index') }}" title="Roster Kerja" class="sidebar-item relative flex items-center h-12 rounded-xl transition-all duration-300 {{ request()->routeIs('rosters.*') ? 'bg-blue-50 text-[#0052cc]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
+                        <a href="{{ route('rosters.index') }}" title="Roster Kerja" data-alias="roaster" class="sidebar-item relative flex items-center h-12 rounded-xl transition-all duration-300 {{ request()->routeIs('rosters.*') ? 'bg-blue-50 text-[#0052cc]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900' }}">
                             <div class="w-14 h-12 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-calendar-days text-[16px]"></i>
                             </div>
                             <span class="text-[13px] font-bold whitespace-nowrap nav-label transition-opacity duration-300">Roster Kerja</span>
                             <div class="tooltip absolute left-full ml-3 px-2 py-1.5 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-all">Roster Kerja</div>
                         </a>
-                    </div>
+
                 </div>
 
                 <!-- Management -->
@@ -220,6 +222,8 @@
                                     <i class="fa-solid fa-shield-halved text-[12px] mr-2"></i>
                                     <span class="text-[12px] font-bold">Akses User</span>
                                 </a>
+
+                                @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
                                 <a href="{{ route('master.shifts') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.shifts') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-business-time text-[12px] mr-2"></i>
                                     <span class="text-[12px] font-bold">Shift</span>
@@ -240,11 +244,9 @@
                                     <i class="fa-solid fa-location-dot text-[12px] mr-2"></i>
                                     <span class="text-[12px] font-bold">Geofence (Setting)</span>
                                 </a>
-
-                                @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
                                 <a href="{{ route('master.mitra') }}" class="flex items-center h-10 transition-all {{ request()->routeIs('master.mitra') ? 'text-[#0052cc] font-black' : 'text-slate-500 hover:text-slate-900' }}">
                                     <i class="fa-solid fa-handshake text-[12px] mr-2"></i>
-                                    <span class="text-[12px] font-bold">Mitra Kerja / Subcon</span>
+                                    <span class="text-[12px] font-bold">Mikat / Subcont</span>
                                 </a>
                                 @endif
                             </div>
@@ -402,7 +404,9 @@
                     
                     directChildren.forEach(child => {
                         if (child.tagName === 'A') {
-                            if (child.textContent.toLowerCase().includes(term)) {
+                            const text = child.textContent.toLowerCase();
+                            const alias = child.getAttribute('data-alias')?.toLowerCase() || '';
+                            if (text.includes(term) || alias.includes(term)) {
                                 child.style.display = 'flex';
                                 sectionHasMatch = true;
                             } else {
@@ -416,7 +420,9 @@
                             let subHasMatch = false;
                             const btnMatch = btn.textContent.toLowerCase().includes(term);
                             subLinks.forEach(link => {
-                                if (btnMatch || link.textContent.toLowerCase().includes(term)) {
+                                const linkText = link.textContent.toLowerCase();
+                                const linkAlias = link.getAttribute('data-alias')?.toLowerCase() || '';
+                                if (btnMatch || linkText.includes(term) || linkAlias.includes(term)) {
                                     link.style.display = 'flex';
                                     subHasMatch = true;
                                 } else {
@@ -449,6 +455,48 @@
             loader.style.opacity = '0';
             setTimeout(() => { loader.style.visibility = 'hidden'; }, 500);
         });
+
+        // 2. Global Searchable Select Initialization (TomSelect)
+        window.initSearchableSelects = function() {
+            document.querySelectorAll('.searchable-select').forEach(el => {
+                if (el.tomselect) return;
+                if (typeof TomSelect !== 'undefined') {
+                    new TomSelect(el, {
+                        copyClassesToDropdown: false,
+                        dropdownParent: 'body',
+                        controlInput: '<input>',
+                        render: {
+                            no_results: function(data, escape) {
+                                return '<div class="no-results p-4 text-center text-slate-400 font-bold text-xs uppercase tracking-widest bg-slate-50/50 rounded-xl">Tidak ada data ditemukan untuk "' + escape(data.input) + '"</div>';
+                            },
+                            option: function(data, escape) {
+                                return '<div class="px-4 py-2 text-[13px] font-bold text-slate-700 hover:bg-blue-50 transition-colors">' + escape(data.text) + '</div>';
+                            }
+                        },
+                        onInitialize: function() {
+                            this.control.classList.add('premium-select');
+                            this.dropdown.classList.add('premium-dropdown');
+                        }
+                    });
+                }
+            });
+        };
+
+        // 3. Global Password Visibility Toggle
+        window.togglePasswordVisibility = function(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleIcon = document.getElementById(iconId);
+            if (!passwordInput || !toggleIcon) return;
+
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+
+            // Toggle Lucide Icon
+            toggleIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        };
     </script>
     @stack('scripts')
 </body>

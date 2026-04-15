@@ -1,0 +1,16 @@
+# Railway config untuk Backend Node.js (TypeScript + Prisma)
+# Docs: https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build && npx prisma generate"
+
+[deploy]
+startCommand = "npx prisma migrate deploy && npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[deploy.healthchecks]]
+type = "http"
+path = "/"
+port = 3000

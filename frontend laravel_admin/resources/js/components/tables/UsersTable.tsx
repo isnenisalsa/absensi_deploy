@@ -14,6 +14,9 @@ interface User {
     full_name: string;
     position?: { pos_name: string };
   };
+  mitra?: {
+    mitra_name: string;
+  };
 }
 
 interface UsersTableProps {
@@ -23,7 +26,7 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ data, userRole, mitraId }: UsersTableProps) {
-  const isSuperAdmin = userRole === 'admin' && (mitraId === null || mitraId === undefined);
+  const canManage = userRole === 'admin' || userRole === 'admin_mitra';
 
   const columns: ColumnDef<User>[] = [
     {
@@ -41,8 +44,10 @@ export function UsersTable({ data, userRole, mitraId }: UsersTableProps) {
             <AvatarFallback>{(user.employee?.full_name || user.nrp)[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-[14px] font-bold text-black leading-tight tracking-tight">{user.employee?.full_name || "Belum ada nama"}</span>
-            <span className="text-[11px] font-bold text-black mt-0.5">{user.employee?.position?.pos_name || "Bukan karyawan"}</span>
+            <span className="text-[14px] font-bold text-black leading-tight tracking-tight">{user.employee?.full_name || "Guest Account"}</span>
+            <span className="text-[11px] font-bold text-black mt-0.5">
+              {user.role === 'admin' ? "ARIA SYSTEM" : (user.mitra?.mitra_name || "Internal PAMA")}
+            </span>
           </div>
         </div>
       ),
@@ -64,14 +69,14 @@ export function UsersTable({ data, userRole, mitraId }: UsersTableProps) {
         <div className="flex justify-center">
            {user.is_active ? 
               <span className="flex items-center gap-1.5 text-emerald-600 font-bold text-[12px]"><CheckCircle2 className="h-4 w-4"/> Aktif</span> : 
-              <span className="flex items-center gap-1.5 text-yellow-600 font-bold text-[12px]"><XCircle className="h-4 w-4"/> Suspend</span>
+              <span className="flex items-center gap-1.5 text-yellow-600 font-bold text-[12px]"><XCircle className="h-4 w-4"/> NONAKTIF</span>
            }
         </div>
       ),
     },
   ];
 
-  if (isSuperAdmin) {
+  if (canManage) {
     columns.push({
       header: "Aksi",
       accessorKey: "actions",

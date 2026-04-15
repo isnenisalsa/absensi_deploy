@@ -30,9 +30,7 @@
             <button id="btnBulkDelete" type="button" onclick="openBulkDeleteModal()" class="hidden px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-extrabold text-[12px] rounded-xl shadow-sm transition-all uppercase tracking-widest flex items-center justify-center gap-2 border border-red-200 animate-fade-in">
                 <i data-lucide="trash-2" class="w-4 h-4"></i> HAPUS TERPILIH (<span id="selectedCount">0</span>)
             </button>
-            <button type="button" onclick="openImportModal()" class="px-5 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-extrabold text-[12px] rounded-xl shadow-sm transition-all uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-200">
-                <i data-lucide="file-up" class="w-4 h-4"></i> IMPORT EXCEL
-            </button>
+
             <button type="button" onclick="openCreateModal()" class="px-5 py-2.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> TAMBAH POSISI
             </button>
@@ -53,15 +51,18 @@
     @endif
 
     <div class="flex flex-col gap-4">
-        <h3 class="font-extrabold text-slate-800 text-[15px] flex items-center gap-2">
-            <i  class="fa-solid fa-list w-5 h-5 text-blue-500" ></i> Daftar Posisi (<span id="totalPos">{{ count($positions) }}</span>)
-        </h3>
+    <div class="flex flex-col gap-4">
         <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
-            <!-- Table Toolbar (Simplified) -->
-            <div class="p-6 border-b border-slate-50 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/30">
-                <div class="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 italic-none">
-                    <i class="fa-solid fa-circle-info text-blue-500 text-[10px]"></i>
-                    <span class="text-[10px] font-black text-blue-700 uppercase tracking-widest leading-none italic-none">Total: {{ count($positions) }} Posisi Terdaftar</span>
+            <!-- Updated Table Toolbar -->
+            <div class="p-4 border-b border-slate-50 bg-slate-50/20">
+                <div class="flex flex-wrap gap-4 items-center justify-between px-1">
+                    <div class="flex items-center gap-3">
+                        <div class="relative group">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black group-focus-within:text-blue-500 transition-colors"></i>
+                            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari Posisi..." 
+                                   class="pl-9 w-72 h-10 bg-slate-50 border-slate-200 rounded-xl text-[13px] font-bold text-black focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all placeholder:font-medium">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -75,16 +76,8 @@
                             </th>
                             @endif
                             <th class="py-4 px-5 text-[11px] font-extrabold text-black tracking-widest w-[80px]">No</th>
-                            <th class="py-4 px-5 text-[10px] font-black text-black tracking-[0.15em] cursor-pointer group/sort transition-all relative overflow-hidden active:bg-slate-100/30" onclick="sortTableByName()">
-                                <div class="flex items-center gap-2 select-none group-hover/sort:text-indigo-600 transition-colors">
-                                    <span>Nama Posisi</span>
-                                    <div class="relative w-4 h-4 flex items-center justify-center">
-                                        <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 opacity-100 transition-all duration-300 text-black" id="sortIcon"></i>
-                                        <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-black rounded-full scale-0 transition-transform duration-300" id="sortIndicator"></span>
-                                    </div>
-                                </div>
-                                <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-indigo-500 transition-all duration-500 group-hover/sort:w-full opacity-50"></div>
-                            </th>
+                            <th class="py-4 px-5 text-[10px] font-extrabold text-black tracking-[0.15em]">Nama Posisi</th>
+                            <th class="py-4 px-5 text-[11px] font-extrabold text-black tracking-widest">Akses Lokasi Geofence</th>
                             @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
                             <th class="py-4 px-5 text-[11px] font-extrabold text-black tracking-widest text-right">Aksi</th>
                             @endif
@@ -99,10 +92,30 @@
                             </td>
                             @endif
                             <td class="py-4 px-5 text-[13px] font-bold text-black">{{ $loop->iteration }}</td>
-                            <td class="py-4 px-5 text-[14px] font-bold text-black">{{ $pos['pos_name'] }}</td>
+                            <td class="py-4 px-5">
+                                <div class="text-[14px] font-bold text-black tracking-tight">{{ $pos['pos_name'] }}</div>
+                            </td>
+                            <td class="py-4 px-5">
+                                <div class="flex flex-wrap gap-1.5">
+                                    @if($pos['allow_any_location'])
+                                        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black border border-emerald-100 shadow-sm">
+                                            <i data-lucide="globe" class="w-3 h-3"></i> SEMUA LOKASI
+                                        </span>
+                                    @elseif(!empty($pos['allowed_locations']) && count($pos['allowed_locations']) > 0)
+                                        @foreach($pos['allowed_locations'] as $aloc)
+                                        <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[10px] font-black border border-blue-100 shadow-sm transition-all hover:bg-blue-100">
+                                            <i data-lucide="map-pin" class="w-3 h-3 opacity-60"></i>
+                                            {{ $aloc['location']['location_name'] }}
+                                        </span>
+                                        @endforeach
+                                    @else
+                                        <span class="text-[11px] font-bold text-slate-300 italic">Belum Diatur (Restricted)</span>
+                                    @endif
+                                </div>
+                            </td>
                             @if(Session::get('user_role') === 'admin' && Session::get('mitra_id') === null)
-                            <td class="py-4 px-5 text-right">
-                                <button type="button" onclick="editPosition({{ json_encode($pos) }})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all mr-2">
+                            <td class="py-4 px-5 text-right whitespace-nowrap">
+                                <button type="button" onclick="editPosition({{ json_encode($pos) }})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all mr-2" title="Edit Posisi">
                                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                                 </button>
                                 <button type="button" onclick="confirmDelete('{{ $pos['pos_id'] }}', '{{ $pos['pos_name'] }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all">
@@ -118,7 +131,7 @@
                                     <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                                         <i data-lucide="folder-open" class="w-8 h-8 text-slate-200"></i>
                                     </div>
-                                    <div class="text-slate-400 font-bold text-sm">Belum ada data posisi.</div>
+                                    <div class="text-slate-400 font-bold text-sm">Tidak ada data yang ditemukan</div>
                                     <button onclick="openCreateModal()" class="mt-4 text-blue-600 font-black text-xs hover:underline uppercase tracking-widest">Tambah Posisi Sekarang</button>
                                 </div>
                             </td>
@@ -126,6 +139,9 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+            <div class="px-8 py-4 bg-slate-50 border-t border-slate-100 italic-none">
+                <p class="text-[10px] font-extrabold text-black uppercase tracking-widest">Total <span id="recordCount">{{ count($positions) }}</span> records detected</p>
             </div>
         </div>
     </div>
@@ -151,15 +167,30 @@
             
             <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
 
-            <div class="flex flex-col mb-6 relative z-10">
-                <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Posisi</label>
-                <input type="text" id="posNameInput" name="pos_name" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" required placeholder="Silahkan isi Nama Posisi"/>
+            <div class="space-y-4 relative z-10">
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Nama Posisi</label>
+                    <input type="text" id="posNameInput" name="pos_name" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl py-3 px-4 text-[13px] text-slate-800 font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm" required placeholder="Silahkan isi Nama Posisi"/>
+                </div>
 
+                <div class="flex items-center gap-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                    <input type="checkbox" id="allowAnyInput" name="allow_any_location" value="1" class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                    <label for="allowAnyInput" class="text-[12px] font-black text-blue-800 cursor-pointer select-none">BOLEH ABSEN DI SEMUA LOKASI (GEOFENCE BYPASS)</label>
+                </div>
+
+                <div id="locationPicker" class="flex flex-col">
+                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">Mapping Lokasi Kerja (Geofence Terkait)</label>
+                    <select id="locationSelect" name="location_ids[]" class="w-full" multiple placeholder="Pilih Lokasi yang Diizinkan...">
+                        @foreach($locations as $loc)
+                            <option value="{{ $loc['location_id'] }}">{{ $loc['location_name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
-            <div class="flex flex-col gap-3">
+            <div class="mt-8 flex flex-col gap-3">
                 <button type="submit" id="btnSubmit" class="w-full px-6 py-3.5 bg-gradient-to-r from-[#0052cc] to-blue-600 hover:from-[#0047b3] hover:to-blue-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <i  class="fa-solid fa-save w-4 h-4" ></i> SIMPAN POSISI
+                    <i data-lucide="save" class="w-4 h-4"></i> SIMPAN POSISI
                 </button>
             </div>
         </form>
@@ -219,37 +250,7 @@
     </div>
 </div>
 
-<!-- Modal Import Excel -->
-<div id="importModalContainer" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeImportModal()"></div>
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="font-extrabold text-slate-800 text-[15px] flex items-center gap-2">
-                <i data-lucide="file-up" class="w-5 h-5 text-emerald-500" ></i>
-                <span>Import Data Posisi</span>
-            </h3>
-            <button type="button" onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <i data-lucide="x" class="w-5 h-5" ></i>
-            </button>
-        </div>
-        <form action="{{ route('master.positions.import') }}" method="POST" enctype="multipart/form-data" class="p-6">
-            @csrf
-            <div class="mb-6">
-                <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2.5 block ml-1">Pilih File Excel (.xlsx / .xls)</label>
-                <div class="relative group">
-                    <input type="file" name="file" accept=".xlsx, .xls, .csv" required
-                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-slate-200 rounded-xl p-1.5 font-bold cursor-pointer" />
-                </div>
-                <p class="mt-3 text-[11px] text-slate-400 font-bold italic leading-relaxed">
-                    * Format Excel wajib memiliki header <span class="text-blue-600 font-black underline">"Nama Jabatan"</span> atau <span class="text-blue-600 font-black underline">"Position Name"</span> pada baris pertama.
-                </p>
-            </div>
-            <button type="submit" class="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-emerald-500/30 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
-                <i data-lucide="upload-cloud" class="w-4 h-4" ></i> MULAI IMPORT
-            </button>
-        </form>
-    </div>
-</div>
+
 @endsection
 
 @push('scripts')
@@ -259,6 +260,8 @@
     const form = document.getElementById('positionForm');
     const methodField = document.getElementById('methodField');
     const posNameInput = document.getElementById('posNameInput');
+    const allowAnyInput = document.getElementById('allowAnyInput');
+    const locationSelect = document.getElementById('locationSelect');
     const modalTitle = document.getElementById('modalTitle');
     const btnSubmit = document.getElementById('btnSubmit');
     const delPosName = document.getElementById('delPosName');
@@ -267,19 +270,61 @@
     const storeUrl = "{{ route('master.positions.store') }}";
     const updateUrlBase = "{{ url('master/positions') }}"; 
 
+    let locationSelectInstance;
+
     // Initialize Icons on page load
-    document.addEventListener('DOMContentLoaded', () => {
+    function initModule() {
         lucide.createIcons();
-        sortTableByName(); // Auto-sort A-Z on load
+        if (typeof TomSelect !== 'undefined' && document.getElementById('locationSelect')) {
+            locationSelectInstance = new TomSelect('#locationSelect', {
+                plugins: ['remove_button'],
+                persist: false,
+                create: false,
+                maxItems: null,
+                allowEmptyOption: true,
+                closeAfterSelect: false,
+                render: {
+                    option: function(data, escape) {
+                        return `<div class="flex items-center gap-2">
+                            <i class="fa-solid fa-location-dot text-[10px] text-slate-400"></i>
+                            <span>${escape(data.text)}</span>
+                        </div>`;
+                    },
+                    item: function(data, escape) {
+                        return `<div class="flex items-center gap-2">
+                             <i class="fa-solid fa-map-pin opacity-50"></i>
+                             <span>${escape(data.text)}</span>
+                        </div>`;
+                    }
+                }
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initModule();
+    });
+
+    allowAnyInput.addEventListener('change', function() {
+        const picker = document.getElementById('locationPicker');
+        if (this.checked) {
+            picker.classList.add('opacity-40', 'pointer-events-none');
+            if (locationSelectInstance) locationSelectInstance.clear();
+        } else {
+            picker.classList.remove('opacity-40', 'pointer-events-none');
+        }
     });
 
     function openCreateModal() {
         methodField.value = 'POST';
         form.action = storeUrl;
         posNameInput.value = '';
+        allowAnyInput.checked = false;
+        if (locationSelectInstance) locationSelectInstance.clear();
+        document.getElementById('locationPicker').classList.remove('opacity-40', 'pointer-events-none');
         
         modalTitle.innerText = "Tambah Posisi Baru";
-        btnSubmit.innerHTML = `<i  class="fa-solid fa-save w-4 h-4" ></i> SIMPAN POSISI`;
+        btnSubmit.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> SIMPAN POSISI`;
         modalContainer.classList.remove('hidden');
         lucide.createIcons();
     }
@@ -289,9 +334,22 @@
         methodField.value = 'PUT';
         
         posNameInput.value = pos.pos_name;
+        allowAnyInput.checked = pos.allow_any_location;
         
-        modalTitle.innerText = `Edit: #${pos.pos_name}`;
-        btnSubmit.innerHTML = `<i  class="fa-solid fa-save w-4 h-4" ></i> PERBARUI POSISI`;
+        if (locationSelectInstance) {
+            const locIds = (pos.allowed_locations || []).map(al => al.location_id.toString());
+            locationSelectInstance.setValue(locIds);
+        }
+
+        const picker = document.getElementById('locationPicker');
+        if (pos.allow_any_location) {
+            picker.classList.add('opacity-40', 'pointer-events-none');
+        } else {
+            picker.classList.remove('opacity-40', 'pointer-events-none');
+        }
+        
+        modalTitle.innerText = `Edit: ${pos.pos_name}`;
+        btnSubmit.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> PERBARUI POSISI`;
         modalContainer.classList.remove('hidden');
         lucide.createIcons();
     }
@@ -311,14 +369,7 @@
         deleteModalContainer.classList.add('hidden');
     }
 
-    const importModalContainer = document.getElementById('importModalContainer');
-    function openImportModal() {
-        importModalContainer.classList.remove('hidden');
-        lucide.createIcons();
-    }
-    function closeImportModal() {
-        importModalContainer.classList.add('hidden');
-    }
+
 
     // --- Bulk Delete Logic ---
     const selectAll = document.getElementById('selectAll');
@@ -378,55 +429,65 @@
         if (e.key === 'Escape') {
             closeModal();
             closeDeleteModal();
-            closeImportModal();
             closeBulkDeleteModal();
         }
     });
 
-    // --- Sorting Logic ---
-    let sortDirection = 'desc'; // Set to desc so first call toggles to 'asc' (A-Z)
-    function sortTableByName() {
-        const tbody = document.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr:not(.no-data)'));
-        
-        if (rows.length === 0 || rows[0].innerText.includes('Belum ada data')) return;
+    // --- Search Logic ---
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('positionTable');
+        const tr = table.getElementsByTagName('tr');
+        const emptyState = document.getElementById('emptyStateRow');
+        const recordCount = document.getElementById('recordCount');
+        let visibleCount = 0;
 
-        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-        
-        rows.sort((a, b) => {
-            const nameA = a.querySelector('.text-\\[14px\\]').innerText.trim().toUpperCase();
-            const nameB = b.querySelector('.text-\\[14px\\]').innerText.trim().toUpperCase();
+        for (let i = 1; i < tr.length; i++) {
+            if (tr[i].id === 'emptyStateRow') continue;
             
-            if (sortDirection === 'asc') {
-                return nameA.localeCompare(nameB);
-            } else {
-                return nameB.localeCompare(nameA);
+            const nameTd = tr[i].getElementsByTagName('td')[2];
+            
+            if (nameTd) {
+                const nameText = nameTd.textContent || nameTd.innerText;
+                
+                if (nameText.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                    visibleCount++;
+                    const numTd = tr[i].getElementsByTagName('td')[1];
+                    if (numTd) numTd.innerText = visibleCount;
+                } else {
+                    tr[i].style.display = "none";
+                }
             }
-        });
-
-        tbody.innerHTML = '';
-        rows.forEach((row, index) => {
-            const numSpan = row.querySelector('.text-\\[13px\\]');
-            if (numSpan) numSpan.innerText = index + 1;
-            tbody.appendChild(row);
-        });
-
-        const sortIcon = document.getElementById('sortIcon');
-        const sortIndicator = document.getElementById('sortIndicator');
-        
-        if (sortDirection === 'asc') {
-            sortIcon.setAttribute('data-lucide', 'sort-asc');
-            sortIcon.classList.add('text-black', 'opacity-100');
-            sortIndicator.classList.add('scale-100', 'bg-black');
-            sortIndicator.classList.remove('bg-indigo-600');
-        } else {
-            sortIcon.setAttribute('data-lucide', 'sort-desc');
-            sortIcon.classList.add('text-black', 'opacity-100');
-            sortIndicator.classList.add('scale-100', 'bg-black');
-            sortIndicator.classList.remove('bg-indigo-600');
         }
 
-        lucide.createIcons();
+        // Update record count
+        if (recordCount) recordCount.innerText = visibleCount;
+
+        if (visibleCount === 0) {
+            if (!emptyState) {
+                const tbody = table.querySelector('tbody');
+                const newEmpty = document.createElement('tr');
+                newEmpty.id = 'emptyStateRow';
+                newEmpty.innerHTML = `
+                    <td colspan="4" class="py-20 text-center bg-slate-50/20">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                <i data-lucide="search-x" class="w-8 h-8 text-slate-200"></i>
+                            </div>
+                            <div class="text-slate-400 font-bold text-sm">Tidak ada data yang ditemukan</div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(newEmpty);
+                lucide.createIcons();
+            } else {
+                emptyState.style.display = "";
+            }
+        } else if (emptyState) {
+            emptyState.style.display = "none";
+        }
     }
 
 </script>

@@ -41,12 +41,14 @@ Route::prefix('master')->name('master.')->group(function () {
     Route::get('/shifts', [\App\Http\Controllers\MasterController::class, 'shifts'])->name('shifts');
     Route::post('/shifts', [\App\Http\Controllers\MasterController::class, 'storeShift'])->name('shifts.store');
     Route::put('/shifts/{id}', [\App\Http\Controllers\MasterController::class, 'updateShift'])->name('shifts.update');
+    Route::delete('/shifts/bulk', [\App\Http\Controllers\MasterController::class, 'bulkDestroyShifts'])->name('shifts.bulk-destroy');
+
     Route::delete('/shifts/{id}', [\App\Http\Controllers\MasterController::class, 'destroyShift'])->name('shifts.destroy');
 
     // Departments
     Route::get('/departments', [\App\Http\Controllers\MasterController::class, 'departments'])->name('departments');
     Route::post('/departments', [\App\Http\Controllers\MasterController::class, 'storeDepartment'])->name('departments.store');
-    Route::post('/departments/import', [\App\Http\Controllers\MasterController::class, 'importDepartments'])->name('departments.import');
+
     Route::put('/departments/{id}', [\App\Http\Controllers\MasterController::class, 'updateDepartment'])->name('departments.update');
     Route::delete('/departments/bulk', [\App\Http\Controllers\MasterController::class, 'bulkDestroyDepartments'])->name('departments.bulk-destroy');
     Route::delete('/departments/{id}', [\App\Http\Controllers\MasterController::class, 'destroyDepartment'])->name('departments.destroy');
@@ -54,7 +56,7 @@ Route::prefix('master')->name('master.')->group(function () {
     // Divisions
     Route::get('/divisions', [\App\Http\Controllers\MasterController::class, 'divisions'])->name('divisions');
     Route::post('/divisions', [\App\Http\Controllers\MasterController::class, 'storeDivision'])->name('divisions.store');
-    Route::post('/divisions/import', [\App\Http\Controllers\MasterController::class, 'importDivisions'])->name('divisions.import');
+
     Route::put('/divisions/{id}', [\App\Http\Controllers\MasterController::class, 'updateDivision'])->name('divisions.update');
     Route::delete('/divisions/bulk', [\App\Http\Controllers\MasterController::class, 'bulkDestroyDivisions'])->name('divisions.bulk-destroy');
     Route::delete('/divisions/{id}', [\App\Http\Controllers\MasterController::class, 'destroyDivision'])->name('divisions.destroy');
@@ -65,7 +67,7 @@ Route::prefix('master')->name('master.')->group(function () {
     Route::put('/positions/{id}', [\App\Http\Controllers\MasterController::class, 'updatePosition'])->name('positions.update');
     Route::delete('/positions/bulk', [\App\Http\Controllers\MasterController::class, 'bulkDestroyPositions'])->name('positions.bulk-destroy');
     Route::delete('/positions/{id}', [\App\Http\Controllers\MasterController::class, 'destroyPosition'])->name('positions.destroy');
-    Route::post('/positions/import', [\App\Http\Controllers\MasterController::class, 'importPositions'])->name('positions.import');
+
 
     // Lokasi Kerja (Work Location / Geofence)
 
@@ -74,6 +76,7 @@ Route::prefix('master')->name('master.')->group(function () {
     Route::get('/mitra', [\App\Http\Controllers\MasterMitraController::class, 'index'])->name('mitra');
     Route::post('/mitra', [\App\Http\Controllers\MasterMitraController::class, 'store'])->name('mitra.store');
     Route::put('/mitra/{id}', [\App\Http\Controllers\MasterMitraController::class, 'update'])->name('mitra.update');
+    Route::delete('/mitra/bulk', [\App\Http\Controllers\MasterMitraController::class, 'bulkDestroy'])->name('mitra.bulk-destroy');
     Route::delete('/mitra/{id}', [\App\Http\Controllers\MasterMitraController::class, 'destroy'])->name('mitra.destroy');
 
 });
@@ -81,7 +84,7 @@ Route::prefix('master')->name('master.')->group(function () {
 // Roster Management
 Route::get('/rosters', [\App\Http\Controllers\RosterController::class, 'index'])->name('rosters.index');
 Route::get('/rosters/export', [\App\Http\Controllers\RosterController::class, 'exportCSV'])->name('rosters.export');
-Route::post('/rosters/import', [\App\Http\Controllers\RosterController::class, 'importCSV'])->name('rosters.import');
+
 Route::post('/rosters', [\App\Http\Controllers\RosterController::class, 'store'])->name('rosters.store');
 Route::delete('/rosters/{id}', [\App\Http\Controllers\RosterController::class, 'destroy'])->name('rosters.destroy');
 

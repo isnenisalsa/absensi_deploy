@@ -5,6 +5,8 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   console.error(`[Error] ${err.message || 'Unknown server error'} \n ${err.stack}`);
 
   res.status(err.status || 500).json({
-    error: 'Terjadi kesalahan sistem internal. Silakan hubungi tim Admin.',
+    error: err.message || 'Terjadi kesalahan sistem internal. Silakan hubungi tim Admin.',
+    details: String(err),
+    stack: err.stack
   });
 };

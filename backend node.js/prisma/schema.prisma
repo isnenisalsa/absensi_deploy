@@ -15,7 +15,7 @@ model users {
   mitra_id      Int?
   employee      employees?
   sessions      user_sessions[]
-  mitra         mitras?         @relation(fields: [mitra_id], references: [mitra_id])
+  mitra         mitras?         @relation(fields: [mitra_id], references: [mitra_id], onDelete: Cascade)
 
   @@index([mitra_id], map: "users_mitra_id_fkey")
 }
@@ -29,7 +29,7 @@ model user_sessions {
   is_active  Boolean  @default(true)
   created_at DateTime @default(now())
   expires_at DateTime
-  user       users    @relation(fields: [nrp], references: [nrp])
+  user       users    @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
 
   @@index([nrp])
 }
@@ -56,19 +56,26 @@ model locations {
 }
 
 model departments {
-  dept_id   Int         @id @default(autoincrement())
-  dept_name String      @db.VarChar(255)
-  divisions divisions[]
+  dept_id   Int        @id @default(autoincrement())
+  dept_name String     @db.VarChar(255)
+  divisions department_divisions[]
+  employees employees[]
+}
+
+model department_divisions {
+  dept_id    Int
+  div_id     Int
+  department departments @relation(fields: [dept_id], references: [dept_id], onDelete: Cascade)
+  division   divisions   @relation(fields: [div_id], references: [div_id], onDelete: Cascade)
+
+  @@id([dept_id, div_id])
 }
 
 model divisions {
-  div_id     Int         @id @default(autoincrement())
-  div_name   String      @db.VarChar(255)
-  dept_id    Int
-  department departments @relation(fields: [dept_id], references: [dept_id])
-  employees  employees[]
-
-  @@index([dept_id], map: "divisions_dept_id_fkey")
+  div_id      Int                    @id @default(autoincrement())
+  div_name    String                 @db.VarChar(255)
+  departments department_divisions[]
+  employees   employees[]
 }
 
 model positions {
@@ -94,22 +101,25 @@ model employees {
   full_name             String               @db.VarChar(255)
   pos_id                Int?
   div_id                Int?
+  dept_id               Int?
   location_id           Int?
   default_work_location String?              @db.VarChar(255)
   mitra_id              Int?
   photo_profile         String?              @db.VarChar(255)
   allow_any_location    Boolean              @default(false)
   attendances           attendances[]
-  allowed_locations     employee_locations[]
   division              divisions?           @relation(fields: [div_id], references: [div_id])
+  department            departments?         @relation(fields: [dept_id], references: [dept_id])
   location              locations?           @relation(fields: [location_id], references: [location_id])
-  mitra                 mitras?              @relation(fields: [mitra_id], references: [mitra_id])
+  mitra                 mitras?              @relation(fields: [mitra_id], references: [mitra_id], onDelete: Cascade)
   user                  users                @relation(fields: [nrp], references: [nrp])
   position              positions?           @relation(fields: [pos_id], references: [pos_id])
+  allowed_locations     employee_locations[]
   ftw_reports           ftw_reports[]
   rosters               rosters[]
 
   @@index([div_id], map: "employees_div_id_fkey")
+  @@index([dept_id], map: "employees_dept_id_fkey")
   @@index([location_id], map: "employees_location_id_fkey")
   @@index([pos_id], map: "employees_pos_id_fkey")
   @@index([mitra_id], map: "employees_mitra_id_fkey")
@@ -153,7 +163,7 @@ model attendances {
   device_ip       String?     @db.VarChar(45)
   date_in         DateTime?   @db.Date
   date_out        DateTime?   @db.Date
-  employee        employees   @relation(fields: [nrp], references: [nrp])
+  employee        employees   @relation(fields: [nrp], references: [nrp], onDelete: Cascade)
   shift           shifts      @relation(fields: [shift_id], references: [shift_id])
 
   @@index([nrp], map: "attendances_nrp_fkey")
@@ -199,8 +209,7 @@ model ftw_reports {
 
 enum user_roles {
   admin
-  safety
-  csr
+  admin_mitra
   employee
 }
 

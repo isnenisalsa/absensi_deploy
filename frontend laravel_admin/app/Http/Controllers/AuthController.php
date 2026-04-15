@@ -95,7 +95,37 @@ class AuthController extends Controller
             return redirect('/select-profile')->withErrors(['nrp' => 'Anda harus menyeleksi profil terlebih dahulu.']);
         }
 
-        return view('dashboard');
+        $apiUrl = env('NODE_API_URL', 'http://localhost:3000');
+        $token = Session::get('api_token');
+
+        try {
+            $response = Http::withToken($token)->get("{$apiUrl}/api/stats/dashboard");
+            $stats = $response->successful() ? $response->json() : null;
+        } catch (\Exception $e) {
+            $stats = null;
+        }
+
+        // Provide safe defaults if API call failed
+        if ($stats === null) {
+            $stats = [
+                'total_employees' => 0,
+                'today_presence' => 0,
+                'not_present' => 0,
+                'late_count' => 0,
+                'outside_geofence' => 0,
+                'total_mitras' => 0,
+                'recent_presence' => [],
+                'trend' => [],
+                'master_summary' => [
+                    'departments' => 0,
+                    'divisions' => 0,
+                    'positions' => 0,
+                    'shifts' => 0,
+                ],
+            ];
+        }
+
+        return view('dashboard', compact('stats'));
     }
 
     public function users()
@@ -118,7 +148,13 @@ class AuthController extends Controller
                     'role' => $u['role'],
                     'is_active' => $u['is_active'],
                     'employee' => [
-                        'full_name' => $u['employee']['full_name'] ?? '-'
+                        'full_name' => $u['employee']['full_name'] ?? '-',
+                        'position' => [
+                            'pos_name' => $u['employee']['position']['pos_name'] ?? null
+                        ]
+                    ],
+                    'mitra' => [
+                        'mitra_name' => (isset($u['mitra']) && isset($u['mitra']['mitra_name'])) ? $u['mitra']['mitra_name'] : '-'
                     ]
                 ];
             }, $rawUsers);

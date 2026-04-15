@@ -13,7 +13,10 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
 
     // 1. Total Karyawan
     const totalEmployees = await prisma.employees.count({
-      where: whereMitra
+      where: {
+        ...whereMitra,
+        user: { role: 'employee' }
+      }
     });
 
     // 2. Presensi Hari Ini (Check-in)
@@ -25,31 +28,75 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       where: {
         attendance_date: today,
         trans_type: 'Check_in',
-        employee: whereMitra
+        employee: {
+            ...whereMitra,
+            user: { role: 'employee' }
+        }
       }
     });
 
-    // 3. Status FTW Hari Ini
-    const todayFtwFit = await prisma.ftw_reports.count({
+    // 3. Terlambat Hari Ini (Check-in time > shift_time_in)
+    // Query check-ins today and include shift info
+    const latePresences = await prisma.attendances.findMany({
       where: {
-        ftw_date: today,
-        status_ftw: 'FIT',
-        employee: whereMitra
+        attendance_date: today,
+        trans_type: 'Check_in',
+        employee: {
+            ...whereMitra,
+            user: { role: 'employee' }
+        }
+      },
+      include: { shift: true }
+    });
+
+    let lateCount = 0;
+    latePresences.forEach(att => {
+      if (att.shift && att.time_wita && att.shift.time_in_expected) {
+        const checkInTime = new Date(att.time_wita).getTime();
+        const expectedTime = new Date(att.shift.time_in_expected).getTime();
+        if (checkInTime > expectedTime) {
+          lateCount++;
+        }
       }
     });
 
-    const todayFtwUnfit = await prisma.ftw_reports.count({
-      where: {
-        ftw_date: today,
-        status_ftw: 'UNFIT',
-        employee: whereMitra
-      }
-    });
+    // 4. Tidak Hadir (Total - Presence - Izin/Sakit)
+    // Note: this is a simple delta
+    const notPresent = Math.max(0, totalEmployees - todayPresence);
 
-    // 4. Total Lokasi Kerja
-    const totalLocations = await prisma.locations.count();
+    // 5. Total Lokasi Kerja & Master Data (Isolasi)
+    let totalDepts, totalDivs, totalPositions, totalShifts, totalLocations;
 
-    // 5. Trend Presensi 7 Hari Terakhir
+    if (mitraId) {
+        // Jika Admin Mitra, hitung hanya yang terpakai oleh karyawan mereka
+        totalDepts = await prisma.departments.count({
+            where: { employees: { some: { mitra_id: Number(mitraId) } } }
+        });
+        totalDivs = await prisma.divisions.count({
+            where: { employees: { some: { mitra_id: Number(mitraId) } } }
+        });
+        totalPositions = await prisma.positions.count({
+            where: { employees: { some: { mitra_id: Number(mitraId) } } }
+        });
+        totalShifts = await prisma.shifts.count({
+            where: { rosters: { some: { employee: { mitra_id: Number(mitraId) } } } }
+        });
+        totalLocations = await prisma.locations.count({
+            where: { employees: { some: { mitra_id: Number(mitraId) } } }
+        });
+    } else {
+        // Jika Superadmin, hitung global
+        totalDepts = await prisma.departments.count();
+        totalDivs = await prisma.divisions.count();
+        totalPositions = await prisma.positions.count();
+        totalShifts = await prisma.shifts.count();
+        totalLocations = await prisma.locations.count();
+    }
+    
+    // Isolasi Total Mitra: Admin Mitra hanya melihat 1 (dirinya sendiri)
+    const totalMitras = mitraId ? 1 : await prisma.mitras.count();
+
+    // 6. Trend Presensi 7 Hari Terakhir
     const trend = [];
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
@@ -61,7 +108,10 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
             where: {
                 attendance_date: dt,
                 trans_type: 'Check_in',
-                employee: whereMitra
+                employee: {
+                    ...whereMitra,
+                    user: { role: 'employee' }
+                }
             }
         });
 
@@ -71,42 +121,61 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
         });
     }
 
-    // 6. Aktivitas Terbaru (5 Terakhir)
+    // 7. Aktivitas Terbaru (10 Terakhir untuk tabel)
     const recentPresence = await prisma.attendances.findMany({
         where: {
-            employee: whereMitra
+            employee: {
+                ...whereMitra,
+                user: { role: 'employee' }
+            }
         },
         include: {
             employee: {
                 select: { 
                     full_name: true, 
+                    photo_profile: true,
+                    department: { select: { dept_name: true } },
                     mitra: { select: { mitra_name: true } } 
                 }
+            },
+            shift: {
+                select: { shift_code: true }
             }
         },
         orderBy: { time_wita: 'desc' },
-        take: 5
+        take: 10
     });
 
-    // 7. Breakdown per Mitra (Khusus Superadmin)
+    // 8. Breakdown per Mitra (Khusus Superadmin)
     let mitraBreakdown = [];
     if (!mitraId) {
         const mitrasData = await prisma.mitras.findMany({
             include: { 
-                _count: { select: { employees: true } } 
+                employees: {
+                    where: { user: { role: 'employee' } }
+                }
             }
         });
         mitraBreakdown = mitrasData.map(m => ({
             name: m.mitra_name,
-            count: m._count.employees
+            count: m.employees.length
         }));
     }
 
     res.json({
         total_employees: totalEmployees,
         today_presence: todayPresence,
-        today_ftw: { fit: todayFtwFit, unfit: todayFtwUnfit },
-        total_locations: totalLocations,
+        late_count: lateCount,
+        not_present: notPresent,
+        outside_geofence: 0, // Logic placeholder based on system constraints
+        total_mitras: totalMitras,
+        master_summary: {
+            departments: totalDepts,
+            divisions: totalDivs,
+            positions: totalPositions,
+            shifts: totalShifts,
+            locations: totalLocations
+        },
         trend,
         recent_presence: recentPresence,
         mitra_breakdown: mitraBreakdown

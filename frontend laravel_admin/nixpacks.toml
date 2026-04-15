@@ -1,0 +1,16 @@
+# Nixpacks config untuk Laravel — paksa PHP 8.2 + Node 20
+[phases.setup]
+nixPkgs = ["php82", "php82Packages.composer", "nodejs_20", "npm-10_x"]
+
+[phases.build]
+cmds = [
+  "composer install --no-dev --optimize-autoloader",
+  "npm install",
+  "npm run build",
+  "php artisan config:cache",
+  "php artisan route:cache",
+  "php artisan view:cache"
+]
+
+[start]
+cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"

@@ -3,7 +3,7 @@ import { ModernDataTable, ColumnDef } from "../ModernDataTable";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface Employee {
@@ -12,8 +12,10 @@ interface Employee {
   pos_id?: number;
   div_id?: number;
   position?: { pos_name: string };
+  department?: { dept_name: string };
   division?: { div_name: string };
   mitra?: { mitra_name: string };
+  location?: { location_name: string };
   user?: { is_active: boolean; role: string };
   mitra_id?: number | null;
   location_id?: number | null;
@@ -26,13 +28,12 @@ interface EmployeesTableProps {
 }
 
 export function EmployeesTable({ data, userRole, mitraId }: EmployeesTableProps) {
-  const isSuperAdmin = userRole === 'admin' && (mitraId === null || mitraId === undefined);
+  const canManage = userRole === 'admin' || userRole === 'admin_mitra';
 
   const columns: ColumnDef<Employee>[] = [
     {
       header: "NRP",
       accessorKey: "nrp",
-      className: "font-bold text-black",
     },
     {
       header: "Identitas Karyawan",
@@ -44,19 +45,30 @@ export function EmployeesTable({ data, userRole, mitraId }: EmployeesTableProps)
             <AvatarFallback>{emp.full_name[0]}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-[14px] font-bold text-black leading-tight tracking-tight">{emp.full_name}</span>
+            <span className="text-[14px] font-extrabold text-black leading-tight tracking-tight">{emp.full_name}</span>
             <span className="text-[11px] font-bold text-black mt-0.5">{emp.position?.pos_name || "Jabatan tidak diset"}</span>
           </div>
         </div>
       ),
     },
     {
-      header: "Penempatan",
-      accessorKey: "division",
+      header: "Departemen",
+      accessorKey: "department",
       cell: (emp) => (
         <div className="flex flex-col">
           <Badge variant="outline" className="w-fit bg-slate-50 border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
-            {emp.division?.div_name || "Tanpa Divisi"}
+            {emp.department?.dept_name || "Tanpa Departemen"}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      header: "Penempatan",
+      accessorKey: "location",
+      cell: (emp) => (
+        <div className="flex flex-col">
+          <Badge variant="outline" className="w-fit bg-emerald-50 border-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5">
+            {emp.location?.location_name || "Belum Ditugaskan"}
           </Badge>
         </div>
       ),
@@ -84,13 +96,35 @@ export function EmployeesTable({ data, userRole, mitraId }: EmployeesTableProps)
         </div>
       ),
     },
-    ...(isSuperAdmin ? [{
+    ...(canManage ? [{
       header: "Aksi",
       accessorKey: "actions",
       className: "text-right",
       cell: (emp: Employee) => (
         <div className="flex justify-end gap-2.5">
           <TooltipProvider>
+            {userRole === 'admin_mitra' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                     variant="outline" 
+                     size="icon" 
+                     className={`h-9 w-9 rounded-xl transition-all shadow-sm ${
+                        emp.user?.is_active 
+                        ? "text-amber-600 border-amber-100 bg-amber-50/50 hover:bg-amber-100/50 hover:border-amber-300" 
+                        : "text-emerald-600 border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/50 hover:border-emerald-300"
+                     }`}
+                     onClick={() => (window as any).toggleEmployeeStatus(emp.nrp, !emp.user?.is_active)}
+                  >
+                    {emp.user?.is_active ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className={`${emp.user?.is_active ? "bg-amber-600" : "bg-emerald-600"} text-white border-none text-[10px] font-black uppercase tracking-widest px-3 py-1.5 shadow-lg shadow-black/10`}>
+                  <p>{emp.user?.is_active ? "Nonaktifkan Akun" : "Aktifkan Akun"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
             <Tooltip>
                <TooltipTrigger asChild>
                  <Button 
@@ -133,6 +167,12 @@ export function EmployeesTable({ data, userRole, mitraId }: EmployeesTableProps)
       data={data} 
       columns={columns} 
       searchPlaceholder="Cari NRP atau nama..." 
+      emptyActionText="Tambah Karyawan Sekarang"
+      onEmptyAction={() => {
+        if ((window as any).openCreateModal) {
+          (window as any).openCreateModal();
+        }
+      }}
     />
   );
 }

@@ -39,6 +39,7 @@ class EmployeeController extends Controller
                 'mitra_id' => $emp['mitra_id'] ?? null,
                 'location_id' => $emp['location_id'] ?? null,
                 'position' => ['pos_name' => $emp['position']['pos_name'] ?? '-'],
+                'department' => ['dept_name' => $emp['department']['dept_name'] ?? '-'],
                 'division' => ['div_name' => $emp['division']['div_name'] ?? '-'],
                 'location' => ['location_name' => $emp['location']['location_name'] ?? '-'],
                 'mitra' => ['mitra_name' => $emp['mitra']['mitra_name'] ?? '-'],
@@ -85,6 +86,13 @@ class EmployeeController extends Controller
         if ($response->json() && isset($response->json()['error'])) {
             $errorMsg = $response->json()['error'];
         }
+
+        // Add detailed logging
+        \Log::error('[FRONTEND ERROR] Gagal mendaftarkan karyawan', [
+            'status' => $response->status(),
+            'error_body' => $response->body(),
+            'request_data' => $request->except(['_token', 'password'])
+        ]);
         
         return redirect()->back()->withErrors(['error' => $errorMsg]);
     }

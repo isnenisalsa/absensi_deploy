@@ -86,7 +86,11 @@
                             <select name="profile" required
                                 class="w-full bg-white border border-gray-200 rounded-lg py-3.5 pl-11 pr-10 text-sm text-black invalid:text-gray-400 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none cursor-pointer transition-colors">
                                 <option value="" disabled selected>[SELECT]</option>
-                                <option value="Administrator" class="text-black">Administrator</option>
+                                @if(Session::get('user_role') === 'admin')
+                                    <option value="Administrator" class="text-black">Administrator</option>
+                                @elseif(Session::get('user_role') === 'admin_mitra')
+                                    <option value="Admin Mikat / Subcont" class="text-black">Admin Mikat / Subcont</option>
+                                @endif
                             </select>
 
                         </div>

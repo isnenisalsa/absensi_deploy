@@ -50,9 +50,6 @@
                 <a href="{{ route('rosters.export', ['month' => $month, 'year' => $year]) }}" class="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 font-extrabold text-[11px] rounded-xl transition-all flex items-center gap-2 shadow-sm uppercase tracking-wider">
                     <i class="fa-solid fa-file-export"></i> EXPORT
                 </a>
-                <button onclick="openImportModal()" class="px-4 py-2.5 bg-white border border-slate-200 text-slate-600 hover:text-emerald-600 font-extrabold text-[11px] rounded-xl transition-all flex items-center gap-2 shadow-sm uppercase tracking-wider">
-                    <i class="fa-solid fa-file-import"></i> IMPORT
-                </button>
             </div>
 
             <button onclick="openBulkModal()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-extrabold text-[11px] rounded-xl shadow-lg shadow-blue-500/20 transition-all uppercase tracking-widest flex items-center justify-center gap-2 ml-2">
@@ -119,7 +116,7 @@
                                 $dateStr = "$year-$month-" . str_pad($d, 2, '0', STR_PAD_LEFT);
                                 $isWeekend = in_array(date('N', strtotime($dateStr)), [6, 7]);
                             @endphp
-                            <th class="py-3 px-1 text-[10px] font-extrabold text-center uppercase tracking-tighter {{ $isWeekend ? 'bg-red-50 text-red-500' : 'text-slate-400' }} border-r border-slate-100 w-[60px]">
+                            <th class="py-3 px-1 text-[10px] font-extrabold text-center uppercase tracking-tighter text-slate-400 border-r border-slate-100 w-[60px]">
                                 {{ $d }}
                             </th>
                         @endfor
@@ -148,7 +145,7 @@
                                     $totOff++;
                                 }
                             @endphp
-                            <td class="py-1 px-0.5 text-center border-r border-slate-100 {{ $isWeekend ? 'bg-slate-50/30' : '' }}">
+                            <td class="py-1 px-0.5 text-center border-r border-slate-100">
                                 <button type="button" 
                                         onclick="openSingleModal('{{ $emp['nrp'] }}', '{{ $emp['full_name'] }}', '{{ $year }}-{{ $month }}-{{ str_pad($d, 2, '0', STR_PAD_LEFT) }}', '{{ $rData['work_location'] ?? '' }}', '{{ $rData['shift_id'] ?? '' }}')"
                                         class="w-full min-h-[50px] flex flex-col items-center justify-center p-1 rounded-lg transition-all border border-transparent hover:border-blue-200
@@ -316,47 +313,7 @@
     </div>
 </div>
 
-<!-- Modal Import CSV -->
-<div id="importModalContainer" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeImportModal()"></div>
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-fade-in-up mx-4">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="font-extrabold text-slate-800 text-[15px] flex items-center gap-2">
-                <i class="fa-solid fa-file-import text-emerald-500"></i>
-                <span>Import Roster CSV</span>
-            </h3>
-            <button type="button" onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                <i class="fa-solid fa-xmark text-[18px]"></i>
-            </button>
-        </div>
-        
-        <form action="{{ route('rosters.import') }}" method="POST" enctype="multipart/form-data" class="p-8">
-            @csrf
-            <div class="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <p class="text-[11px] font-bold text-blue-700 uppercase tracking-wider mb-2">Panduan Format CSV:</p>
-                <p class="text-[10px] text-blue-600 leading-relaxed font-bold">
-                    Pisahkan data dengan titik koma (;) dengan urutan kolom:<br>
-                    <span class="text-slate-900">nrp;tanggal;kode_shift;lokasi_kerja</span><br><br>
-                    Contoh:<br>
-                    <span class="text-slate-700">123456;2024-04-01;DS;KANTOR PUSAT</span>
-                </p>
-            </div>
 
-            <div class="space-y-5">
-                <div>
-                    <label class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2 block">Pilih File CSV</label>
-                    <input type="file" name="file" accept=".csv" class="w-full text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all cursor-pointer" required>
-                </div>
-            </div>
-
-            <div class="mt-8">
-                <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[12px] rounded-xl shadow-lg shadow-emerald-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> MULAI IMPORT
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
@@ -410,7 +367,6 @@
         if (e.key === 'Escape') {
             closeBulkModal();
             closeSingleModal();
-            closeImportModal();
         }
     });
 </script>

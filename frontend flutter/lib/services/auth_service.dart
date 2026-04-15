@@ -77,6 +77,18 @@ class AuthService {
       return null;
     }
   }
+
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    try {
+      await apiService.instance.post('auth/change-password', data: {
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      });
+    } catch (e) {
+      print("Change Password Error: $e");
+      rethrow;
+    }
+  }
 }
 
 // Global Singleton

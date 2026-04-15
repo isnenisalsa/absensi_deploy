@@ -7,7 +7,8 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
     const mitraId = req.user?.mitra_id;
     const users = await prisma.users.findMany({
       where: {
-        ...(mitraId && { mitra_id: mitraId })
+        ...(mitraId && { mitra_id: mitraId }),
+        role: { in: ['admin', 'admin_mitra'] }
       },
       include: {
         employee: {
@@ -15,6 +16,11 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
             full_name: true,
             position: true,
             division: true
+          }
+        },
+        mitra: {
+          select: {
+            mitra_name: true
           }
         }
       }
@@ -47,7 +53,10 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
         }
         updateData.role = role;
     }
-    if (is_active !== undefined) updateData.is_active = is_active;
+    if (is_active !== undefined) {
+        // Robust boolean parsing
+        updateData.is_active = (is_active === 'true' || is_active === true || is_active === 1 || is_active === '1');
+    }
     if (password) {
       const salt = await bcrypt.genSalt(10);
       updateData.password_hash = await bcrypt.hash(password, salt);
@@ -61,5 +70,19 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     res.json({ message: 'User berhasil diperbarui', data: user });
   } catch (error) {
     res.status(500).json({ error: 'Gagal memperbarui user', details: String(error) });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const nrp = req.params.nrp as string;
+
+    await prisma.users.delete({
+      where: { nrp }
+    });
+
+    res.json({ message: 'User berhasil dihapus secara permanen' });
+  } catch (error) {
+    res.status(500).json({ error: 'Gagal menghapus user', details: String(error) });
   }
 };

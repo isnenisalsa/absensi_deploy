@@ -43,6 +43,7 @@ export const getRosters = async (req: Request, res: Response) => {
 
 export const createRoster = async (req: Request, res: Response) => {
   try {
+    console.log(`[BACKEND] Creating/Updating roster:`, req.body);
     const { nrp, date, shift_id } = req.body;
 
     if (!nrp || !date) {
@@ -84,6 +85,7 @@ export const createRoster = async (req: Request, res: Response) => {
 
 export const bulkCreateRoster = async (req: Request, res: Response) => {
   try {
+    console.log(`[BACKEND] Bulk processing rosters, count:`, req.body.rosters?.length);
     const { rosters } = req.body; // Array of { nrp, date, shift_id, work_location }
 
     if (!Array.isArray(rosters)) {

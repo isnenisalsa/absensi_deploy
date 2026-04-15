@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'api_service.dart';
 
 class AttendanceService {
@@ -14,6 +16,7 @@ class AttendanceService {
     }
   }
 
+  /// Mengambil riwayat absensi milik sendiri (employee) atau semua (admin)
   Future<List<dynamic>> getAttendanceHistory() async {
     try {
       final response = await apiService.instance.get('attendance/history');
@@ -60,6 +63,38 @@ class AttendanceService {
     }
   }
 
+  /// Upload foto bukti absensi dari kamera ke backend.
+  /// Mengembalikan [filename] yang disimpan server, atau null jika gagal.
+  Future<String?> uploadAttendancePhoto(File photoFile) async {
+    try {
+      final fileName = photoFile.path.split('/').last;
+      final formData = FormData.fromMap({
+        'photo': await MultipartFile.fromFile(
+          photoFile.path,
+          filename: fileName,
+        ),
+      });
+
+      final response = await apiService.instance.post(
+        'attendance/upload-photo',
+        data: formData,
+        options: Options(
+          headers: {'Content-Type': 'multipart/form-data'},
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final filename = response.data['filename'];
+        print("✅ [Photo Upload] Success: $filename");
+        return filename as String?;
+      }
+      return null;
+    } catch (e) {
+      print("❌ [Photo Upload] Error: $e");
+      return null;
+    }
+  }
+
   Future<List<dynamic>> getLocations() async {
     try {
       final response = await apiService.instance.get('master/locations');
@@ -84,3 +119,4 @@ class AttendanceService {
 }
 
 final attendanceService = AttendanceService();
+

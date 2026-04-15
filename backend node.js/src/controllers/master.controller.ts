@@ -1,9 +1,13 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/db';
+import * as ExcelJS from 'exceljs';
 
 export const getShifts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const shifts = await prisma.shifts.findMany();
+    const mitraId = req.user?.mitra_id;
+    const shifts = await prisma.shifts.findMany({
+        where: mitraId ? { rosters: { some: { employee: { mitra_id: Number(mitraId) } } } } : {}
+    });
     res.json(shifts);
   } catch (err) {
     res.status(500).json({ error: 'Error fetching shifts' });
@@ -12,21 +16,37 @@ export const getShifts = async (req: Request, res: Response): Promise<void> => {
 
 export const getDepartments = async (req: Request, res: Response): Promise<void> => {
   try {
+    const mitraId = req.user?.mitra_id;
     const deps = await prisma.departments.findMany({
+      where: mitraId ? { employees: { some: { mitra_id: Number(mitraId) } } } : {},
       include: {
-        divisions: true
+        divisions: {
+          include: {
+            division: true
+          }
+        }
       }
     });
-    res.json(deps);
+
+    // Flatten divisions for easier consumption
+    const flattened = deps.map(d => ({
+      ...d,
+      divisions: d.divisions.map(dv => dv.division)
+    }));
+
+    res.json(flattened);
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching deps' });
+    res.status(500).json({ error: 'Error fetching deps', details: String(err) });
   }
 };
 
 // --- GEOFENCE LOCATION DATA (LOKASI KERJA) ---
 export const getLocations = async (req: Request, res: Response): Promise<void> => {
   try {
-    const locationList = await prisma.locations.findMany();
+    const mitraId = req.user?.mitra_id;
+    const locationList = await prisma.locations.findMany({
+        where: mitraId ? { employees: { some: { mitra_id: Number(mitraId) } } } : {}
+    });
     res.json(locationList);
   } catch (err) {
     res.status(500).json({ error: 'Error fetching locations' });
@@ -35,6 +55,10 @@ export const getLocations = async (req: Request, res: Response): Promise<void> =
 
 export const createLocation = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menambah data master global.' });
+        return;
+    }
     const { location_name, latitude, longitude, radius_meters } = req.body;
     
     // Validasi Sederhana
@@ -61,6 +85,10 @@ export const createLocation = async (req: Request, res: Response): Promise<void>
 
 export const updateLocation = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan mengubah data master global.' });
+        return;
+    }
     const { id } = req.params;
     const { location_name, latitude, longitude, radius_meters } = req.body;
     
@@ -83,6 +111,10 @@ export const updateLocation = async (req: Request, res: Response): Promise<void>
 
 export const deleteLocation = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menghapus data master global.' });
+        return;
+    }
     const { id } = req.params;
     await prisma.locations.delete({
       where: { location_id: Number(id) }
@@ -97,6 +129,10 @@ export const deleteLocation = async (req: Request, res: Response): Promise<void>
 // --- SHIFTS ---
 export const createShift = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menambah data master global.' });
+        return;
+    }
     const { shift_code, time_in_expected, time_out_expected, is_night } = req.body;
     const tIn = time_in_expected.length === 5 ? time_in_expected + ':00' : time_in_expected;
     const tOut = time_out_expected.length === 5 ? time_out_expected + ':00' : time_out_expected;
@@ -117,6 +153,10 @@ export const createShift = async (req: Request, res: Response): Promise<void> =>
 };
 export const updateShift = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan mengubah data master global.' });
+        return;
+    }
     const { id } = req.params;
     const { shift_code, time_in_expected, time_out_expected, is_night } = req.body;
     let updateData: any = {};
@@ -141,6 +181,10 @@ export const updateShift = async (req: Request, res: Response): Promise<void> =>
 };
 export const deleteShift = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menghapus data master global.' });
+        return;
+    }
     const { id } = req.params;
     await prisma.shifts.delete({ where: { shift_id: Number(id) } });
     res.json({ message: 'Shift deleted' });
@@ -149,28 +193,108 @@ export const deleteShift = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
+export const bulkDestroyShifts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menghapus data master secara massal.' });
+        return;
+    }
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      res.status(400).json({ error: 'Invalid or missing IDs array' });
+      return;
+    }
+    await prisma.shifts.deleteMany({
+      where: { shift_id: { in: ids.map(Number) } }
+    });
+    res.json({ message: `${ids.length} Shifts deleted successfully` });
+  } catch (err) {
+    res.status(500).json({ error: 'Error in bulk deletion', details: String(err) });
+  }
+};
+
+
+
 // --- DEPARTMENTS ---
 export const createDepartment = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { dept_name } = req.body;
-    const created = await prisma.departments.create({ data: { dept_name } });
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menambah data master global.' });
+        return;
+    }
+    const { dept_name, div_ids } = req.body;
+    
+    const created = await prisma.departments.create({
+      data: {
+        dept_name,
+        divisions: {
+          create: (Array.isArray(div_ids) ? div_ids : (div_ids ? [div_ids] : [])).map((id: any) => ({
+            div_id: Number(id)
+          }))
+        }
+      },
+      include: {
+        divisions: { include: { division: true } }
+      }
+    });
+
     res.json({ message: 'Department created', data: created });
   } catch (err) {
     res.status(500).json({ error: 'Error creating department', details: String(err) });
   }
 };
+
 export const updateDepartment = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan mengubah data master global.' });
+        return;
+    }
     const { id } = req.params;
-    const { dept_name } = req.body;
-    const updated = await prisma.departments.update({ where: { dept_id: Number(id) }, data: { dept_name } });
+    const { dept_name, div_ids } = req.body;
+    const deptId = Number(id);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // 1. Update Dept Name
+      await tx.departments.update({
+        where: { dept_id: deptId },
+        data: { dept_name }
+      });
+
+      // 2. Clear old relations
+      await tx.department_divisions.deleteMany({
+        where: { dept_id: deptId }
+      });
+
+      // 3. Create new relations
+      const finalDivIds = Array.isArray(div_ids) ? div_ids : (div_ids ? [div_ids] : []);
+      if (finalDivIds.length > 0) {
+        await tx.department_divisions.createMany({
+          data: finalDivIds.map((divId: any) => ({
+            dept_id: deptId,
+            div_id: Number(divId)
+          }))
+        });
+      }
+
+      return tx.departments.findUnique({
+        where: { dept_id: deptId },
+        include: { divisions: { include: { division: true } } }
+      });
+    });
+
     res.json({ message: 'Department updated', data: updated });
   } catch (err) {
     res.status(500).json({ error: 'Error updating department', details: String(err) });
   }
 };
+
 export const deleteDepartment = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menghapus data master global.' });
+        return;
+    }
     const { id } = req.params;
     await prisma.departments.delete({ where: { dept_id: Number(id) } });
     res.json({ message: 'Department deleted' });
@@ -179,13 +303,34 @@ export const deleteDepartment = async (req: Request, res: Response): Promise<voi
   }
 };
 
+export const bulkDeleteDepartments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { ids } = req.body;
+      if (!ids || !Array.isArray(ids)) {
+        res.status(400).json({ error: 'Data IDS tidak valid' });
+        return;
+      }
+  
+      await prisma.departments.deleteMany({
+        where: { dept_id: { in: ids.map(Number) } }
+      });
+  
+      res.json({ message: `${ids.length} departemen berhasil dihapus` });
+    } catch (err) {
+      res.status(500).json({ error: 'Gagal menghapus departemen secara kolektif', details: String(err) });
+    }
+};
+
+
+
 // --- DIVISIONS ---
 export const getDivisions = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { dept_id } = req.query;
-    let whereClause = {};
-    if(dept_id) whereClause = { dept_id: Number(dept_id) };
-    const divisions = await prisma.divisions.findMany({ where: whereClause, include: { department: true }});
+    const mitraId = req.user?.mitra_id;
+    const divisions = await prisma.divisions.findMany({ 
+        where: mitraId ? { employees: { some: { mitra_id: Number(mitraId) } } } : {},
+        include: { departments: true }
+    });
     res.json(divisions);
   } catch (err) {
     res.status(500).json({ error: 'Error fetching divisions', details: String(err) });
@@ -193,8 +338,14 @@ export const getDivisions = async (req: Request, res: Response): Promise<void> =
 };
 export const createDivision = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { div_name, dept_id } = req.body;
-    const created = await prisma.divisions.create({ data: { div_name, dept_id: Number(dept_id) } });
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menambah data master global.' });
+        return;
+    }
+    const { div_name } = req.body;
+    const created = await prisma.divisions.create({ 
+      data: { div_name } 
+    });
     res.json({ message: 'Division created', data: created });
   } catch (err) {
     res.status(500).json({ error: 'Error creating division', details: String(err) });
@@ -202,12 +353,17 @@ export const createDivision = async (req: Request, res: Response): Promise<void>
 };
 export const updateDivision = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan mengubah data master global.' });
+        return;
+    }
     const { id } = req.params;
-    const { div_name, dept_id } = req.body;
-    let updateData: any = {};
-    if(div_name) updateData.div_name = div_name;
-    if(dept_id) updateData.dept_id = Number(dept_id);
-    const updated = await prisma.divisions.update({ where: { div_id: Number(id) }, data: updateData });
+    const { div_name } = req.body;
+    
+    const updated = await prisma.divisions.update({ 
+      where: { div_id: Number(id) }, 
+      data: { div_name } 
+    });
     res.json({ message: 'Division updated', data: updated });
   } catch (err) {
     res.status(500).json({ error: 'Error updating division', details: String(err) });
@@ -215,6 +371,10 @@ export const updateDivision = async (req: Request, res: Response): Promise<void>
 };
 export const deleteDivision = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menghapus data master global.' });
+        return;
+    }
     const { id } = req.params;
     await prisma.divisions.delete({ where: { div_id: Number(id) } });
     res.json({ message: 'Division deleted' });
@@ -223,10 +383,32 @@ export const deleteDivision = async (req: Request, res: Response): Promise<void>
   }
 };
 
+export const bulkDeleteDivisions = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { ids } = req.body;
+      if (!ids || !Array.isArray(ids)) {
+        res.status(400).json({ error: 'Data IDS tidak valid' });
+        return;
+      }
+  
+      await prisma.divisions.deleteMany({
+        where: { div_id: { in: ids.map(Number) } }
+      });
+  
+      res.json({ message: `${ids.length} divisi berhasil dihapus` });
+    } catch (err) {
+      res.status(500).json({ error: 'Gagal menghapus divisi secara kolektif', details: String(err) });
+    }
+};
+
+
+
 // --- POSITIONS ---
 export const getPositions = async (req: Request, res: Response): Promise<void> => {
     try {
+      const mitraId = req.user?.mitra_id;
       const positions = await prisma.positions.findMany({
+        where: mitraId ? { employees: { some: { mitra_id: Number(mitraId) } } } : {},
         include: {
           allowed_locations: {
             include: { location: true }
@@ -241,6 +423,10 @@ export const getPositions = async (req: Request, res: Response): Promise<void> =
 
 export const createPosition = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menambah data master global.' });
+        return;
+    }
     const { pos_name, allow_any_location, location_ids } = req.body;
     const created = await prisma.positions.create({ 
       data: { 
@@ -260,6 +446,10 @@ export const createPosition = async (req: Request, res: Response): Promise<void>
 };
 export const updatePosition = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan mengubah data master global.' });
+        return;
+    }
     const { id } = req.params;
     const { pos_name, allow_any_location, location_ids } = req.body;
     
@@ -302,6 +492,10 @@ export const updatePosition = async (req: Request, res: Response): Promise<void>
 };
 export const deletePosition = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (req.user?.mitra_id) {
+        res.status(403).json({ error: 'Anda tidak diizinkan menghapus data master global.' });
+        return;
+    }
     const { id } = req.params;
     await prisma.positions.delete({ where: { pos_id: Number(id) } });
     res.json({ message: 'Position deleted' });
@@ -309,4 +503,23 @@ export const deletePosition = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ error: 'Error deleting position', details: String(err) });
   }
 };
+
+export const bulkDeletePositions = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { ids } = req.body;
+      if (!ids || !Array.isArray(ids)) {
+        res.status(400).json({ error: 'Data IDS tidak valid' });
+        return;
+      }
+  
+      await prisma.positions.deleteMany({
+        where: { pos_id: { in: ids.map(Number) } }
+      });
+  
+      res.json({ message: `${ids.length} posisi berhasil dihapus` });
+    } catch (err) {
+      res.status(500).json({ error: 'Gagal menghapus data secara kolektif', details: String(err) });
+    }
+};
+
 

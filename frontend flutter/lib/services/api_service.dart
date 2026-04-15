@@ -10,10 +10,10 @@ import '../screens/login_screen.dart';
 
 class ApiService {
   late Dio _dio;
-  
+
   // Use 10.0.2.2 for Android Emulator, 127.0.0.1 for iOS and others
-  static final String _baseUrl = Platform.isAndroid 
-      ? 'http://10.0.2.2:3000/api/' 
+  static final String _baseUrl = Platform.isAndroid
+      ? 'http://10.0.2.2:3000/api/'
       : 'http://127.0.0.1:3000/api/';
 
   // SHA-256 Fingerprint dari sertifikat SSL server Anda
@@ -21,7 +21,6 @@ class ApiService {
   static const String _serverFingerprint = "YOUR_SHA256_FINGERPRINT_HERE";
 
   ApiService() {
-    print("📡 [API Debug] Base URL: $_baseUrl");
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl,
@@ -39,20 +38,28 @@ class ApiService {
       _dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient();
-          client.badCertificateCallback = (X509Certificate cert, String host, int port) {
-            // Verifikasi fingerprint sertifikat
-            final serverCertHash = sha256.convert(cert.der).toString().toUpperCase().replaceAll(':', '');
-            final pinnedHash = _serverFingerprint.toUpperCase().replaceAll(':', '');
-            
-            if (serverCertHash == pinnedHash) {
-              return true; // Cocok, izinkan koneksi
-            }
-            
-            print("❌ SECURITY ALERT: SSL Certificate Mismatch!");
-            print("Expected: $pinnedHash");
-            print("Received: $serverCertHash");
-            return false; // Tidak cocok, blokir (Burp Suite akan gagal di sini)
-          };
+          client.badCertificateCallback =
+              (X509Certificate cert, String host, int port) {
+                // Verifikasi fingerprint sertifikat
+                final serverCertHash = sha256
+                    .convert(cert.der)
+                    .toString()
+                    .toUpperCase()
+                    .replaceAll(':', '');
+                final pinnedHash = _serverFingerprint.toUpperCase().replaceAll(
+                  ':',
+                  '',
+                );
+
+                if (serverCertHash == pinnedHash) {
+                  return true; // Cocok, izinkan koneksi
+                }
+
+                print("❌ SECURITY ALERT: SSL Certificate Mismatch!");
+                print("Expected: $pinnedHash");
+                print("Received: $serverCertHash");
+                return false; // Tidak cocok, blokir (Burp Suite akan gagal di sini)
+              };
           return client;
         },
       );
@@ -65,7 +72,6 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          print("📡 [API Request] ${options.method} ${options.baseUrl}${options.path}");
           final prefs = await SharedPreferences.getInstance();
           final token = prefs.getString('auth_token');
           if (token != null) {
@@ -73,24 +79,22 @@ class ApiService {
           }
           return handler.next(options);
         },
-        onResponse: (response, handler) {
-          print("✅ [API Response] ${response.statusCode} from ${response.requestOptions.path}");
-          return handler.next(response);
-        },
         onError: (DioException e, handler) async {
           // Log errors or handle 401 Unauthorized globally if needed
           final responseData = e.response?.data;
           print("❌ API ERROR [${e.response?.statusCode}]: $responseData");
-          
+
           if (e.response?.statusCode == 401) {
             final prefs = await SharedPreferences.getInstance();
-            
+
             // Targeted cleanup instead of prefs.clear() to preserve other settings (biometrics, etc)
             await prefs.remove('auth_token');
             await prefs.remove('user_data');
-            
-            print("👤 Session cleared due to auth error. Redirecting to login...");
-            
+
+            print(
+              "👤 Session cleared due to auth error. Redirecting to login...",
+            );
+
             // Auto-redirect to Login page using the global navigatorKey
             if (navigatorKey.currentState != null) {
               navigatorKey.currentState!.pushAndRemoveUntil(
@@ -111,12 +115,12 @@ class ApiService {
   Future<void> _checkSecurity() async {
     try {
       bool isJailbroken = await FlutterJailbreakDetection.jailbroken;
-      bool isDeveloperMode = await FlutterJailbreakDetection.developerMode; // Android only
+      bool isDeveloperMode = await FlutterJailbreakDetection.developerMode;
 
       if (isJailbroken || isDeveloperMode) {
-        print("❌ SECURITY ALERT: Device is Jailbroken/Rooted or in Developer Mode!");
-        // Anda bisa memutuskan untuk menutup aplikasi atau membatasi fitur
-        // exit(0); 
+        print(
+          "❌ SECURITY ALERT: Device is Jailbroken/Rooted or in Developer Mode!",
+        );
       }
     } catch (e) {
       print("Security check failed: $e");
@@ -124,5 +128,4 @@ class ApiService {
   }
 }
 
-// Global Singleton
 final apiService = ApiService();

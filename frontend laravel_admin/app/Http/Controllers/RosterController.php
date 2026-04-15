@@ -102,50 +102,7 @@ class RosterController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    public function importCSV(Request $request)
-    {
-        $request->validate(['file' => 'required|mimes:csv,txt']);
-        $token = session('api_token');
 
-        // Fetch Shifts for mapping code to ID
-        $shiftsRes = Http::withToken($token)->get("{$this->apiUrl}/master/shifts");
-        $shifts = $shiftsRes->successful() ? $shiftsRes->json() : [];
-        $shiftMap = [];
-        foreach($shifts as $s) { $shiftMap[strtoupper($s['shift_code'])] = $s['shift_id']; }
-
-        $file = $request->file('file');
-        $handle = fopen($file->getRealPath(), 'r');
-        $header = fgetcsv($handle, 1000, ';'); // Assuming semicolon separator
-
-        $importData = [];
-        while(($data = fgetcsv($handle, 1000, ';')) !== FALSE) {
-            if(count($data) < 3) continue;
-            
-            $nrp = trim($data[0]);
-            $date = trim($data[1]);
-            $shiftCode = strtoupper(trim($data[2]));
-            $loc = trim($data[3] ?? '');
-
-            if(isset($shiftMap[$shiftCode]) || $shiftCode === 'OFF') {
-                $importData[] = [
-                    'nrp' => $nrp,
-                    'date' => $date,
-                    'shift_id' => $shiftMap[$shiftCode] ?? null,
-                    'work_location' => $loc
-                ];
-            }
-        }
-        fclose($handle);
-
-        if(!empty($importData)) {
-            $response = Http::withToken($token)->post("{$this->apiUrl}/rosters/bulk", ['rosters' => $importData]);
-            if ($response->successful()) {
-                return redirect()->back()->with('success', 'Import Roster berhasil: ' . count($importData) . ' baris diproses.');
-            }
-        }
-
-        return redirect()->back()->withErrors(['error' => 'Gagal import roster atau data kosong.']);
-    }
 
     public function store(Request $request)
     {
@@ -189,7 +146,14 @@ class RosterController extends Controller
             return redirect()->back()->with('success', 'Roster berhasil disimpan');
         }
 
-        return redirect()->back()->withErrors(['error' => 'Gagal menyimpan roster: ' . ($response->json()['error'] ?? 'Unknown error')]);
+        // Add detailed logging
+        \Log::error('[FRONTEND ERROR] Gagal menyimpan roster', [
+            'status' => $response->status(),
+            'error_body' => $response->body(),
+            'request_data' => $request->all()
+        ]);
+
+        return redirect()->back()->withErrors(['error' => 'Gagal menyimpan roster: ' . ($response->json()['error'] ?? 'Terjadi kesalahan sistem internal')]);
     }
 
     public function destroy($id)

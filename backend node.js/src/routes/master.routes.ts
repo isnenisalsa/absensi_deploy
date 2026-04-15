@@ -1,18 +1,35 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { 
-  getShifts, createShift, updateShift, deleteShift,
-  getDepartments, createDepartment, updateDepartment, deleteDepartment,
-  getDivisions, createDivision, updateDivision, deleteDivision,
-  getPositions, createPosition, updatePosition, deletePosition,
+  getShifts, createShift, updateShift, deleteShift, bulkDestroyShifts, 
+  getDepartments, createDepartment, updateDepartment, deleteDepartment, bulkDeleteDepartments,
+  getDivisions, createDivision, updateDivision, deleteDivision, bulkDeleteDivisions,
+  getPositions, createPosition, updatePosition, deletePosition, bulkDeletePositions,
   getLocations, updateLocation, createLocation, deleteLocation
 } from '../controllers/master.controller';
 import { authenticateToken, authorizeRoles, restrictToSuperAdmin } from '../middlewares/auth.middleware';
+import { uploadExcel } from '../middlewares/upload.middleware';
 
+const upload = multer();
 const router = Router();
 
 // Global protection for master data
 router.use(authenticateToken);
-router.use(authorizeRoles('admin', 'user', 'employee', 'safety', 'csr'));
+router.use(authorizeRoles('admin', 'admin_mitra', 'user', 'employee'));
+
+// Logging Middleware khusus Master Data
+router.use((req, res, next) => {
+  console.log(`[Master API] Request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+
+
+// Bulk Delete Routes
+router.delete('/shifts/bulk', restrictToSuperAdmin, bulkDestroyShifts);
+router.delete('/departments/bulk', restrictToSuperAdmin, bulkDeleteDepartments);
+router.delete('/divisions/bulk', restrictToSuperAdmin, bulkDeleteDivisions);
+router.delete('/positions/bulk', restrictToSuperAdmin, bulkDeletePositions);
 
 // Shifts
 router.get('/shifts', getShifts);
