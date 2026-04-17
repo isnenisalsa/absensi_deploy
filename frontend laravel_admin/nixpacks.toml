@@ -1,16 +1,20 @@
 # Nixpacks config untuk Laravel — paksa PHP 8.4 + Node 22
+[variables]
+NIXPACKS_PHP_ROOT_DIR = "/app/public"
+NIXPACKS_PHP_FALLBACK_PATH = "/index.php"
+
 [phases.setup]
-nixPkgs = ["php84", "php84Packages.composer", "nodejs_22", "npm-10_x"]
+nixPkgs = ["php84", "php84Packages.composer", "nodejs_22", "npm-10_x", "nginx"]
 
 [phases.build]
 cmds = [
   "composer install --no-dev --optimize-autoloader",
   "npm install",
   "npm run build",
+  "curl -L https://github.com/dunglas/frankenphp/releases/latest/download/frankenphp-linux-x86_64 -o frankenphp",
+  "chmod +x frankenphp",
   "php artisan config:cache",
   "php artisan route:cache",
   "php artisan view:cache"
 ]
 
-[start]
-cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
